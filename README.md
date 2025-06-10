@@ -24,7 +24,7 @@ This backend supports:
 
 For a complete breakdown of available features, request formats, response structure, and endpoints, please check:
 
-👉 **[AgriKart_API_doc.md](../backend/README.md)**
+👉 **[AgriKart_API_doc.md](./backend/README.md)**
 
 ---
 
