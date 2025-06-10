@@ -1,4 +1,4 @@
-# 🚜 FARMHUB BACKEND API
+# 🚜 AgriKart.ai Backend API
 
 ## 📦 TECH STACK
 - Django
