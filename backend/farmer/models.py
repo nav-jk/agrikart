@@ -1,12 +1,16 @@
 from django.db import models
 
+from django.contrib.auth.models import User
+
 class Farmer(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='farmer_profile', null=True, blank=True)
     phone_number = models.CharField(max_length=15, primary_key=True)
     name = models.CharField(max_length=100)
     address = models.TextField()
 
     def __str__(self):
         return f"{self.name} ({self.phone_number})"
+
 
 class Produce(models.Model):
     farmer = models.ForeignKey(Farmer, related_name='produce', on_delete=models.CASCADE)

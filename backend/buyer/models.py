@@ -16,6 +16,13 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField()
 
 class Order(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending Payment'),
+        ('CONFIRMED', 'Confirmed'),
+        ('CANCELLED', 'Cancelled'),
+    ]
+
     buyer = models.ForeignKey(Buyer, related_name='orders', on_delete=models.CASCADE)
     items = models.ManyToManyField(CartItem)
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
