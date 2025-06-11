@@ -25,11 +25,12 @@ SECRET_KEY = "django-insecure-ph8^7laww4*b)3p*mil*%(ue@9t%c8i$fg^glp!v5h^srwfc#z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]  
 
-import os
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "fallback-key")
-DEBUG = os.environ.get("DEBUG", "False") == "True"
+
+# import os
+# SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "fallback-key")
+# DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 # Application definition
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     'farmer',
     'buyer',
     'drf_yasg',
+    'corsheaders'
 ]
 
 AUTH_USER_MODEL = 'api.User'
@@ -58,6 +60,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
 ]
 
 ROOT_URLCONF = "agrikart.urls"

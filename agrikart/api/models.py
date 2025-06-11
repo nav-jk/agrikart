@@ -6,5 +6,7 @@ class User(AbstractUser):
     is_farmer = models.BooleanField(default=False)
     is_buyer = models.BooleanField(default=False)
 
+    REQUIRED_FIELDS = ['phone_number', 'email']  # ✅ Add phone_number here
+    
     def __str__(self):
         return self.username
