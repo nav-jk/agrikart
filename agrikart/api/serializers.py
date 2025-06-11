@@ -18,6 +18,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['email'] = user.email
         token['is_farmer'] = user.is_farmer
         token['is_buyer'] = user.is_buyer
-        token['phone_number'] = user.phone_number
+        token['phone'] = user.phone_number
 
         return token
