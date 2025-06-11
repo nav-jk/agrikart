@@ -1,52 +1,89 @@
-/* General page styling */
+/* Root theme */
+:root {
+  --primary-color: #4caf50;
+  --primary-hover: #388e3c;
+  --accent-color: #2e7d32;
+  --bg-light: #f0fff4;
+  --text-color: #333;
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* General body styles */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5fff3;
-  color: #333;
+  font-family: var(--font-family);
+  background-color: var(--bg-light);
+  color: var(--text-color);
   margin: 0;
-  padding: 20px;
+  padding: 2rem;
 }
 
-/* Link styling */
-a {
-  display: inline-block;
-  margin-bottom: 20px;
-  text-decoration: none;
+/* Welcome section */
+.welcome-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.welcome-section h1 {
+  font-size: 2.5rem;
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.welcome-text {
+  font-size: 1.2rem;
+  color: #4a4a4a;
+  max-width: 700px;
+  margin: 0 auto 2rem auto;
+}
+
+/* Auth prompt */
+.auth-prompt {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.auth-prompt p {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+  font-weight: 500;
   color: #2e7d32;
-  font-weight: bold;
 }
 
-a:hover {
-  text-decoration: underline;
+
+.auth-link,
+.auth-prompt a {
+  font-weight: 600;
+  text-decoration: none;
 }
 
-/* Product card container */
-div > div {
-  background-color: #ffffff;
-  border: 1px solid #d0e7cd;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-/* Product text */
-p {
-  margin: 0 0 10px;
-  font-size: 16px;
-}
-
-/* Add to Cart button */
-button {
-  background-color: #4caf50;
+/* Buttons */
+.btn {
+  background-color: var(--primary-color);
   color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
 }
 
-button:hover {
-  background-color: #388e3c;
+.btn:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-outline {
+  border: 2px solid var(--primary-color);
+  padding: 0.45rem 1.1rem;
+  border-radius: 6px;
+  color: var(--primary-color);
+  background-color: transparent;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-color);
+  color: white;
 }

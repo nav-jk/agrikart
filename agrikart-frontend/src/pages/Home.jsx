@@ -12,25 +12,30 @@ const Home = () => {
     api.get('/api/v1/farmer/').then((res) => setProduce(res.data));
   }, []);
 
-  const addToCart = async (itemId) => {
-    try {
-      await api.post('/api/v1/cart/', { produce_id: itemId });
-    } catch {
-      alert('Login required');
-    }
-  };
-
   return (
-    <div>
-      {user?.is_farmer && <Link to="/dashboard/farmer">Go to Farmer Dashboard</Link>}
-      {produce.map((farmer) =>
-        farmer.produce.map((item) => (
-          <div key={item.id}>
-            <p>{item.name} - ₹{item.price} - Qty: {item.quantity}</p>
-            <button onClick={() => addToCart(item.id)}>Add to Cart</button>
+    <div className="container">
+      <header className="welcome-section">
+        <h1>Welcome to AgriKart 🌾</h1>
+        <p className="welcome-text">
+          Fresh produce straight from local farms to your doorstep. Support farmers, eat healthy, and shop responsibly.
+        </p>
+
+        {user ? (
+          user.is_farmer && (
+            <div className="auth-link">
+              <Link to="/dashboard/farmer">Go to Farmer Dashboard</Link>
+            </div>
+          )
+        ) : (
+          <div className="auth-prompt">
+            <p>New here?</p>
+            <Link className="btn" to="/signup/buyer">Sign Up as Buyer</Link>
+            <Link className="btn" to="/signup/farmer">Sign Up as Farmer</Link>
+            <span style={{ margin: '0 10px', color: '#888' }}>|</span>
+            <Link className="btn-outline" to="/login">Login</Link>
           </div>
-        ))
-      )}
+        )}
+      </header>
     </div>
   );
 };
