@@ -4,6 +4,8 @@ from rest_framework import status
 from .models import User
 from farmer.models import Farmer
 from buyer.models import Buyer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
 
 class BuyerSignup(APIView):
     def post(self, request):
@@ -30,3 +32,7 @@ class FarmerSignup(APIView):
         )
         Farmer.objects.create(user=user, name=data['name'], address=data['address'])
         return Response({"msg": "Farmer created"}, status=201)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer

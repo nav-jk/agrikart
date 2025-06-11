@@ -1,18 +1,16 @@
-# AgriKart Backend API docs
+# AGRIKART BACKEND API DOCUMENTATION
 
----
-
-##  TECH STACK
+## TECH STACK
 
 - Django 5
 - Django REST Framework
-- JWT Authentication (`djangorestframework-simplejwt`)
-- Swagger Docs (`drf-yasg`)
-- Modular apps: `api`, `buyer`, `farmer`
+- JWT Authentication (djangorestframework-simplejwt)
+- Swagger Docs (drf-yasg)
+- Modular apps: api, buyer, farmer
 
 ---
 
-##  BASE API URL
+## BASE API URL
 
 ```
 http://localhost:8000/api/v1/
@@ -20,13 +18,13 @@ http://localhost:8000/api/v1/
 
 ---
 
-##  AUTHENTICATION
+## AUTHENTICATION
 
-FarmHub uses **JWT (Bearer Token)** for secure access.
+AgriKart uses JWT (Bearer Token) for secure access.
 
-###  Buyer Signup
+### Buyer Signup
 
-**POST** `/auth/signup/`
+POST `/auth/signup/`
 
 ```json
 {
@@ -40,9 +38,9 @@ FarmHub uses **JWT (Bearer Token)** for secure access.
 
 ---
 
-###  Farmer Signup
+### Farmer Signup
 
-**POST** `/auth/signup/farmer/`
+POST `/auth/signup/farmer/`
 
 ```json
 {
@@ -57,9 +55,9 @@ FarmHub uses **JWT (Bearer Token)** for secure access.
 
 ---
 
-###  Login (All Users)
+### Login (All Users)
 
-**POST** `/auth/token/`
+POST `/auth/token/`
 
 ```json
 {
@@ -68,7 +66,7 @@ FarmHub uses **JWT (Bearer Token)** for secure access.
 }
 ```
 
-**Returns:**
+Returns:
 
 ```json
 {
@@ -77,25 +75,32 @@ FarmHub uses **JWT (Bearer Token)** for secure access.
 }
 ```
 
-**Use in headers:**
+Use in headers:
 
 ```
 Authorization: Bearer <access-token>
 ```
 
+Tokens include:
+- username
+- email
+- is_farmer
+- is_buyer
+- phone_number
+
 ---
 
-##  FARMER API
+## FARMER API
 
-###  List/Create Farmer
+### List/Create Farmer
 
-**GET/POST** `/farmer/`
+GET/POST `/farmer/`
 
-###  Retrieve/Update/Delete by Phone
+### Retrieve/Update/Delete by Phone
 
-**GET/PUT/DELETE** `/farmer/<phone_number>/`
+GET/PUT/DELETE `/farmer/<phone_number>/`
 
-**Response:**
+Example response:
 
 ```json
 {
@@ -115,30 +120,30 @@ Authorization: Bearer <access-token>
 
 ---
 
-##  PRODUCE (Nested)
+## PRODUCE (Nested)
 
-- Produce is returned inside the `Farmer` response
-- No standalone endpoint (yet)
-
----
-
-##  BUYER API
-
-###  List/Create Buyer
-
-**GET/POST** `/buyer/`
-
-###  Get/Update/Delete by Phone
-
-**GET/PUT/DELETE** `/buyer/<phone_number>/`
-
-**Includes:**
-- `cart` (nested cart items)
-- `orders` (order IDs only for now)
+- Produce is returned inside the Farmer response
+- No standalone endpoint
 
 ---
 
-## 🛒 CART MANAGEMENT
+## BUYER API
+
+### List/Create Buyer
+
+GET/POST `/buyer/`
+
+### Get/Update/Delete by Phone
+
+GET/PUT/DELETE `/buyer/<phone_number>/`
+
+Includes:
+- cart (nested cart items)
+- orders (order IDs)
+
+---
+
+## CART MANAGEMENT
 
 | Method  | Endpoint         | Description             |
 |---------|------------------|-------------------------|
@@ -147,7 +152,7 @@ Authorization: Bearer <access-token>
 | PATCH   | `/cart/<id>/`    | Update item quantity    |
 | DELETE  | `/cart/<id>/`    | Remove item from cart   |
 
-**Add item payload:**
+Add item payload:
 
 ```json
 {
@@ -158,56 +163,53 @@ Authorization: Bearer <access-token>
 
 ---
 
-##  ORDER MANAGEMENT
+## ORDER MANAGEMENT
 
-###  Create Order from Cart
+### Create Order from Cart
 
-**POST** `/orders/create-from-cart/`
+POST `/orders/create-from-cart/`
 
-- Moves cart items to a `PENDING` order
-- Empties the cart
-
----
-
-###  Confirm Order
-
-**POST** `/orders/<id>/confirm/`
-
-- Marks order as `CONFIRMED` (simulated payment)
+- Converts all cart items into a PENDING order
+- Clears the cart
 
 ---
 
-###  ORDER STATUS
+### Confirm Order
 
-- `PENDING`: Created, waiting for payment
-- `CONFIRMED`: Payment successful
-- `CANCELLED`: (Future)
+POST `/orders/<id>/confirm/`
 
----
-
-##  FRONTEND DEVELOPER GUIDE
+- Marks order as CONFIRMED (simulated payment)
 
 ---
 
-###  Home Page
+### ORDER STATUS
 
-- Show list of all **produce** from all farmers
-- Display name, price, quantity, farmer name
-- Show "Add to Cart" button for each item
-
-**On Add to Cart:**
-
-- Make `POST /cart/` request
-- Requires login as buyer
+- PENDING: Created, waiting for payment
+- CONFIRMED: Payment successful
+- CANCELLED: (Planned for future)
 
 ---
 
-###  Buyer Authentication
+## FRONTEND DEVELOPER GUIDE
 
-- Sign up via `/auth/signup/`
-- Login via `/auth/token/`
-- Save `access` token in localStorage or cookie
-- Send JWT in headers:
+### Home Page (All Users)
+
+- Display all produce from all farmers
+- Show: name, price, quantity, farmer name
+- Include "Add to Cart" button
+
+On Add to Cart:
+- Call POST /cart/
+- Requires buyer to be logged in
+
+---
+
+### Buyer Authentication
+
+- Sign up: POST /auth/signup/
+- Login: POST /auth/token/
+- Store access token in localStorage or cookies
+- Use token in headers:
 
 ```
 Authorization: Bearer <access-token>
@@ -215,82 +217,74 @@ Authorization: Bearer <access-token>
 
 ---
 
-###  Buyer Dashboard = Home Page
+### Buyer Home = Dashboard
 
 - After login, redirect to home
 - Buyer sees:
-  - All produce
-  - Cart item count
-  - Link to Cart page
+  - Available products
+  - Option to go to cart
   - Option to place order
 
 ---
 
-###  Cart Page
+### Cart Page
 
-- List buyer’s cart items
-  - Get from `/buyer/<phone_number>/`
-- Buttons to update quantity or remove items
-- Button: **Place Order**
+- List items from buyer’s cart (via /buyer/<phone_number>/)
+- Allow:
+  - Quantity update (PUT/PATCH)
+  - Remove item (DELETE)
+- Show total and place order button
 
 ---
 
-###  Dummy Payment Page
+### Dummy Payment Page
 
-- After creating order (`/orders/create-from-cart/`)
-- Redirect user to:
+After calling `/orders/create-from-cart/`, redirect to:
 
 ```
 /payment?order_id=<id>
 ```
 
-- Simulate payment
-- On confirmation:
-  - POST to `/orders/<id>/confirm/`
-  - Show success message
-  - Redirect to homepage
+- Show order summary
+- On confirm, call: `/orders/<id>/confirm/`
+- Show success message and return to home
 
 ---
 
-###  Farmer Dashboard
+### Farmer Dashboard
 
 - After farmer login:
-  - Fetch `/farmer/<phone_number>/`
-- Show:
-  - Farmer name and address
-  - List of produce with:
-    - Name
-    - Price
-    - Quantity
+  - Call `/farmer/<phone_number>/`
+- Display:
+  - Name
+  - Address
+  - List of produce (name, price, quantity)
 
 ---
 
-## 🛠 DEV UTILITIES
+## DEVELOPMENT UTILITIES
 
-| Tool         | URL                 |
-|--------------|---------------------|
-| Admin Panel  | `/admin/`           |
-| Swagger Docs | `/swagger/`         |
-| ReDoc        | `/redoc/`           |
-
----
-
-##  SECURITY & ACCESS
-
-- All routes are JWT protected
-- Buyer can only view/edit own cart, orders
-- Farmer can only view own produce
-- Swagger available without auth (for testing)
+| Feature      | URL            |
+|--------------|----------------|
+| Admin Panel  | `/admin/`      |
+| Swagger Docs | `/swagger/`    |
+| ReDoc        | `/redoc/`      |
 
 ---
 
+## SECURITY AND ACCESS
 
-##  FUTURE IMPROVEMENTS
-
-- Image uploads for produce
-- Buyer order history endpoint
-- Role-based permissions
-- Payment gateway integration
-- Farmer produce add/edit/delete UI
+- All API calls are JWT protected
+- Buyers and farmers are isolated
+- Roles are embedded in JWT token
+- Swagger available for testing
 
 ---
+
+## FUTURE ROADMAP
+
+- Add image uploads for produce
+- Add buyer order history page
+- Add farmer produce management UI
+- Integrate real payment gateway
+- Implement order cancellation flow
