@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import '../styles/payment.css';
 
 const Payment = () => {
   const location = useLocation();
@@ -21,12 +22,15 @@ const Payment = () => {
   };
 
   return (
-    <div>
-      <h2>Payment</h2>
-      <p>Confirm payment for Order ID: {orderId}</p>
-      <button onClick={confirmPayment} disabled={loading}>
-        {loading ? 'Processing...' : 'Confirm Payment'}
-      </button>
+    <div className="payment-container">
+      <div className="payment-box">
+        <h2>Confirm Your Payment</h2>
+        <p className="order-info">Order ID: <strong>{orderId}</strong></p>
+        <p className="order-note">You're about to complete your purchase. Please confirm your payment to finalize the order.</p>
+        <button className="payment-btn" onClick={confirmPayment} disabled={loading}>
+          {loading ? 'Processing...' : 'Confirm Payment'}
+        </button>
+      </div>
     </div>
   );
 };

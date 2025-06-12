@@ -8,20 +8,36 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <Link to="/" className="navbar-brand">🌾 AgriKart</Link>
+        <Link to="/" className="navbar-brand">
+          🌾 AgriKart
+        </Link>
       </div>
+
       <div className="navbar-right">
-        <Link to="/">Home</Link>
-        {user?.is_farmer && <Link to="/dashboard/farmer">Dashboard</Link>}
-        {!user?.is_farmer && user && <Link to="/cart">Cart</Link>}
+        <Link to="/">
+          <i className="fas fa-home"></i> Home
+        </Link>
+
+        {user?.is_farmer && (
+          <Link to="/dashboard/farmer">
+            <i className="fas fa-tractor"></i> Dashboard
+          </Link>
+        )}
+
+        {user && !user?.is_farmer && (
+          <Link to="/cart">
+            <i className="fas fa-shopping-cart"></i> Cart
+          </Link>
+        )}
+
         {user ? (
-          <button className="btn-logout" onClick={logout}>Logout</button>
+          <button className="btn-logout" onClick={logout}>
+            <i className="fas fa-sign-out-alt"></i> Logout
+          </button>
         ) : (
-          <>
-            <Link to="/login">Login</Link>
-            <Link to="/signup/buyer">Buyer Signup</Link>
-            <Link to="/signup/farmer">Farmer Signup</Link>
-          </>
+          <Link to="/login">
+            <i className="fas fa-sign-in-alt"></i> Login
+          </Link>
         )}
       </div>
     </nav>

@@ -13,10 +13,19 @@ class Farmer(models.Model):
         return self.name
 
 class Produce(models.Model):
+    CATEGORY_CHOICES = [
+        ('Fruits', 'Fruits'),
+        ('Vegetables', 'Vegetables'),
+        ('Grains', 'Grains'),
+        ('Dairy', 'Dairy'),
+        ('Others', 'Others'),
+    ]
+
     farmer = models.ForeignKey(Farmer, related_name='produce', on_delete=models.CASCADE)
     name = models.CharField(max_length=100)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     quantity = models.PositiveIntegerField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Others')
 
     def __str__(self):
         return f"{self.name} ({self.quantity}) - {self.price}"

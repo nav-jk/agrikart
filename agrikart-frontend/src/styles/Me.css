@@ -1,0 +1,99 @@
+/* ========== Root Styles ========== */
+:root {
+  --primary-color: #ffd814;
+  --primary-hover: #f7ca00;
+  --accent-color: #2e7d32;
+  --text-color: #111;
+  --bg-light: #f9f9f9;
+  --bg-white: #fff;
+  --border-color: #ddd;
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ========== Base Layout ========== */
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-light);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+}
+
+/* ========== Profile Container ========== */
+.profile-container {
+  max-width: 960px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.profile-container h2 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--accent-color);
+}
+
+/* ========== Profile Info ========== */
+.profile-info {
+  margin-bottom: 2rem;
+  border: 1px solid #e4e4e4;
+  border-radius: 10px;
+  padding: 1.5rem;
+  background-color: #fcfcfc;
+}
+
+.profile-info p {
+  font-size: 1.05rem;
+  margin: 0.6rem 0;
+  color: #333;
+}
+
+.profile-info strong {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+/* ========== Order History ========== */
+.profile-container h3 {
+  font-size: 1.4rem;
+  color: #1b5e20;
+  margin-bottom: 1rem;
+}
+
+.order-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.order-list li {
+  background-color: #fff;
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.025);
+  font-size: 0.97rem;
+  color: #333;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 768px) {
+  .profile-container {
+    margin: 2rem 1rem;
+    padding: 1.5rem;
+  }
+
+  .profile-container h2 {
+    font-size: 1.6rem;
+  }
+
+  .profile-info p,
+  .order-list li {
+    font-size: 1rem;
+  }
+}

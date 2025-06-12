@@ -1,13 +1,38 @@
 from rest_framework import serializers
 from .models import Buyer, CartItem, Order
 from farmer.serializers import ProduceSerializer
+from farmer.models import Produce
+
 
 class CartItemSerializer(serializers.ModelSerializer):
-    produce = ProduceSerializer(read_only=True)
+    produce = serializers.PrimaryKeyRelatedField(
+        queryset=Produce.objects.all(),
+        write_only=True
+    )
+    produce_info = ProduceSerializer(source='produce', read_only=True)
 
     class Meta:
         model = CartItem
-        fields = ['id', 'produce', 'quantity']
+        fields = ['id', 'produce', 'produce_info', 'quantity']
+
+    def create(self, validated_data):
+        buyer = self.context['request'].user.buyer
+        produce = validated_data['produce']
+        quantity = validated_data['quantity']
+
+        cart_item, created = CartItem.objects.get_or_create(
+            buyer=buyer,
+            produce=produce,
+            defaults={'quantity': quantity}
+        )
+
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+
+        return cart_item
+
+
 
 class BuyerSerializer(serializers.ModelSerializer):
     cart = CartItemSerializer(many=True, read_only=True)
@@ -23,3 +48,4 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'items', 'status']
+

@@ -7,6 +7,7 @@ from buyer.views import CreateOrderFromCart, ConfirmOrder
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from farmer.views import ProduceViewSet
 
 
 schema_view = get_schema_view(
@@ -26,6 +27,7 @@ schema_view = get_schema_view(
 router = DefaultRouter()
 router.register(r'farmer', FarmerViewSet, basename='farmer')
 router.register(r'cart', CartViewSet, basename='cart')
+router.register(r'produce', ProduceViewSet, basename='produce')
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -1,41 +1,67 @@
-import { useEffect, useState } from 'react';
-import api from '../api/api';
+import { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../styles/Home.css';
 
 const Home = () => {
-  const [produce, setProduce] = useState([]);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/api/v1/farmer/').then((res) => setProduce(res.data));
-  }, []);
+    if (user) {
+      if (user.is_farmer) {
+        navigate('/dashboard/farmer');
+      } else {
+        navigate('/dashboard/buyer');
+      }
+    }
+  }, [user, navigate]);
 
   return (
-    <div className="container">
-      <header className="welcome-section">
-        <h1>Welcome to AgriKart 🌾</h1>
-        <p className="welcome-text">
-          Fresh produce straight from local farms to your doorstep. Support farmers, eat healthy, and shop responsibly.
-        </p>
+    <div className="home-page">
+      {/* Combined Hero + Auth Box */}
+      <div className="hero-section">
+        <div className="hero-text">
+          <h1>Freshness Delivered 🍅🥦</h1>
+          <p>Shop directly from India's best local farms — no middlemen, just better food.</p>
+          <p className="subline">Welcome to <strong>AgriKart</strong> — your personalized agri-commerce platform.</p>
 
-        {user ? (
-          user.is_farmer && (
-            <div className="auth-link">
-              <Link to="/dashboard/farmer">Go to Farmer Dashboard</Link>
-            </div>
-          )
-        ) : (
-          <div className="auth-prompt">
-            <p>New here?</p>
+          <div className="auth-buttons">
             <Link className="btn" to="/signup/buyer">Sign Up as Buyer</Link>
+            <span style={{ margin: '0 10px', color: '#888' }}>|</span>
             <Link className="btn" to="/signup/farmer">Sign Up as Farmer</Link>
             <span style={{ margin: '0 10px', color: '#888' }}>|</span>
             <Link className="btn-outline" to="/login">Login</Link>
           </div>
-        )}
-      </header>
+        </div>
+        <div className="hero-image">
+          <img src="/hero-veg.jpg" alt="AgriKart Hero" />
+        </div>
+      </div>
+
+      {/* Category Cards */}
+      <div className="category-section">
+        <h2>Shop by Category</h2>
+        <div className="category-grid">
+          {[
+            { label: 'Fruits', img: '/fruits.jpg' },
+            { label: 'Vegetables', img: '/vegetables.jpg' },
+            { label: 'Organic', img: '/organic.jpg' },
+            { label: 'Dairy', img: '/dairy.jpg' },
+            { label: 'Grains', img: '/grains.jpg' },
+          ].map((cat, index) => (
+            <div
+              className="category-card"
+              key={index}
+              onClick={() => navigate(`/login?redirect=/dashboard/buyer&category=${cat.label}`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <img src={cat.img} alt={cat.label} />
+              <p>{cat.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

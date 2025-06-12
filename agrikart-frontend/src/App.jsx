@@ -10,6 +10,12 @@ import Cart from './pages/Cart';
 import Payment from './pages/Payment';
 import FarmerDashboard from './pages/FarmerDashboard';
 import Navbar from './components/Navbar';
+import BuyerDashboard from './pages/BuyerDashboard';
+import RequireBuyer from './routes/RequireBuyer';
+import Me from './pages/Me';
+
+
+
 
 function App() {
   return (
@@ -20,6 +26,7 @@ function App() {
         <Route path="/signup/buyer" element={<SignupBuyer />} />
         <Route path="/signup/farmer" element={<SignupFarmer />} />
         <Route path="/" element={<Home />} />
+        <Route path="/me" element={<RequireAuth><Me /></RequireAuth>} />
         <Route path="/cart" element={<RequireAuth><Cart /></RequireAuth>} />
         <Route path="/payment" element={<RequireAuth><Payment /></RequireAuth>} />
         <Route path="/dashboard/farmer" element={
@@ -29,6 +36,16 @@ function App() {
             </RequireFarmer>
           </RequireAuth>
         } />
+        <Route
+          path="/dashboard/buyer"
+          element={
+            <RequireAuth>
+              <RequireBuyer>
+                <BuyerDashboard />
+              </RequireBuyer>
+            </RequireAuth>
+          }
+        />
       </Routes>
     </AuthProvider>
   );

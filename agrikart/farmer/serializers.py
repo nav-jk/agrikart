@@ -4,7 +4,9 @@ from .models import Farmer, Produce
 class ProduceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Produce
-        fields = '__all__'
+        fields = ['id', 'name', 'price', 'quantity', 'category']
+
+
 
 class FarmerSerializer(serializers.ModelSerializer):
     produce = ProduceSerializer(many=True, read_only=True)

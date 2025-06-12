@@ -26,6 +26,7 @@ class Order(models.Model):
         ('PENDING', 'Pending'),
         ('CONFIRMED', 'Confirmed'),
         ('CANCELLED', 'Cancelled'),
+         ('DELIVERED', 'Delivered'),
     ]
     buyer = models.ForeignKey(Buyer, related_name='orders', on_delete=models.CASCADE)
     items = models.ManyToManyField(CartItem)
@@ -34,3 +35,4 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order {self.id} - {self.status}"
+
