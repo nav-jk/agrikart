@@ -1,11 +1,11 @@
-# 📘 AgriKart Frontend – Developer Documentation
+#  AgriKart Frontend – Developer Documentation
 
-## ✅ Purpose
+##  Purpose
 This document outlines the structure, features, and workflows of the **AgriKart frontend**, built with React. It includes page descriptions, API integration, role-based routing, and authentication flow.
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Area        | Technology              |
 |-------------|--------------------------|
@@ -18,7 +18,7 @@ This document outlines the structure, features, and workflows of the **AgriKart 
 
 ---
 
-## 🔐 Authentication & Routing
+##  Authentication & Routing
 
 - **Login Endpoint**: `POST /api/v1/auth/token/`
 - **Token Handling**: Saved in `localStorage` → decoded to get user info
@@ -28,47 +28,51 @@ This document outlines the structure, features, and workflows of the **AgriKart 
 - **Axios Auth Header**:
 
 
-### 🛡️ Route Guards
+###  Route Guards
 
 ```jsx
-<Route path="/dashboard/farmer" element={
-<RequireAuth>
-  <RequireFarmer>
-    <FarmerDashboard />
-  </RequireFarmer>
-</RequireAuth>
-} />
+<Route 
+  path="/dashboard/farmer" 
+  element={
+    <RequireAuth>
+      <RequireFarmer>
+        <FarmerDashboard />
+      </RequireFarmer>
+    </RequireAuth>
+  } 
+/>
+```
 
-## 🧭 Navigation Pages
+##  Navigation Pages
 
-### 🏠 Home (`Home.jsx`)
+###  Home (`Home.jsx`)
 - Hero + category cards  
 - Shows signup/login options  
 - Auto-redirects if logged in  
 
 ---
 
-### 🔐 Login (`Login.jsx`)
+###  Login (`Login.jsx`)
 - Accepts `?redirect` and `?category` query  
 - Redirects based on role after login  
 
 ---
 
-### 👥 Signup (`SignupBuyer.jsx`, `SignupFarmer.jsx`)
+###  Signup (`SignupBuyer.jsx`, `SignupFarmer.jsx`)
 Sends POST requests to:
 - `/api/v1/auth/signup/`  
 - `/api/v1/auth/signup/farmer/`  
 
 ---
 
-### 📦 Buyer Dashboard (`BuyerDashboard.jsx`)
+###  Buyer Dashboard (`BuyerDashboard.jsx`)
 - Lists all produce (grouped by farmer)  
 - Add to cart with quantity input  
 - Filters by category via query string  
 
 ---
 
-### 🌱 Farmer Dashboard (`FarmerDashboard.jsx`)
+###  Farmer Dashboard (`FarmerDashboard.jsx`)
 - Shows personal info + produce list  
 - Add/edit/delete produce  
 - Backend sync:
@@ -78,7 +82,7 @@ Sends POST requests to:
 
 ---
 
-### 🛒 Cart (`Cart.jsx`)
+###  Cart (`Cart.jsx`)
 - Displays buyer’s cart items  
 - Allows:
   - Update quantity (`PATCH`)  
@@ -87,14 +91,14 @@ Sends POST requests to:
 
 ---
 
-### 💳 Payment (`Payment.jsx`)
+###  Payment (`Payment.jsx`)
 - Reads `order_id` from query string  
 - Confirms payment via: `POST /orders/:id/confirm/`  
 - On success → redirects to home  
 
 ---
 
-### 👤 Me (`Me.jsx`)
+###  Me (`Me.jsx`)
 - Fetches: `GET /api/v1/auth/me/`  
 - Displays:
   - Name  
@@ -104,7 +108,7 @@ Sends POST requests to:
 
 ---
 
-## 🔌 Key API Endpoints
+##  Key API Endpoints
 
 | Purpose          | Method | Endpoint                                 |
 |------------------|--------|-------------------------------------------|
@@ -122,7 +126,7 @@ Sends POST requests to:
 
 ---
 
-## 🔎 AuthContext API
+##  AuthContext API
 
 Manages global auth state
 
@@ -135,10 +139,11 @@ Manages global auth state
 
 ```jsx
 const { user, login, logout } = useAuth();
-```jsx
+```
 
 ## 🚀 Dev Setup
 
 ```bash
 npm install
 npm run dev
+```
