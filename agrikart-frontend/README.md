@@ -122,7 +122,7 @@ Sends POST requests to:
 | Delete Cart Item | DELETE | `/api/v1/cart/<id>/`                     |
 | Place Order      | POST   | `/api/v1/orders/create-from-cart/`      |
 | Confirm Payment  | POST   | `/api/v1/orders/<id>/confirm/`          |
-| Buyer Orders     | GET    | `/api/v1/buyer/orders/mine/` ✅ Used Before |
+| Buyer Orders     | GET    | `/api/v1/buyer/orders/mine/`            |
 
 ---
 
