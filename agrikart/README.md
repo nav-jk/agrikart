@@ -288,3 +288,17 @@ After calling `/orders/create-from-cart/`, redirect to:
 - Add farmer produce management UI
 - Integrate real payment gateway
 - Implement order cancellation flow
+#  WhatsApp Integration
+
+The WhatsApp integration for this project is being handled by [@debdip4](https://github.com/debdip4).
+
+## 🔗 GitHub Repository
+
+You can find the integration logic and updates here:  
+[https://github.com/debdip4/agrikartwhatsappbot](https://github.com/debdip4/agrikartwhatsappbot.git)
+
+##  Status
+
+- [x] Integration in progress  
+- [ ] Final testing  
+- [ ] Deployment
