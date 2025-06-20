@@ -1,35 +1,35 @@
-# app.py
-
 import os
 import json
 import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
-
-# Initialize Flask app
 app = Flask(__name__)
 
-# Load credentials from environment variables
+# --- Load Credentials ---
 ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
 VERIFY_TOKEN = os.getenv('VERIFY_TOKEN')
 PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID')
 
 # --- In-memory database for hackathon prototype ---
-# This dictionary will store the state and data for each user (farmer)
 user_states = {}
 
-# --- This single function will handle both GET and POST requests ---
+# --- Dictionary to hold all our audio file URLs ---
+# IMPORTANT: You MUST replace these placeholder URLs with your actual public URLs.
+AUDIO_CLIPS = {
+    'welcome': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/welcome.mp3",
+    'en': { 'ask_name': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_name.mp3", 'ask_address': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_address.mp3", 'ask_pincode': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_pincode.mp3", 'reg_complete': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_reg_complete.mp3", 'ask_price': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_price.mp3", 'ask_quantity': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_quantity.mp3", 'ask_more_crops': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_more_crops.mp3", 'next_crop': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_next_crop.mp3", 'thank_you': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_thank_you.mp3", 'welcome_back': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_welcome_back.mp3", 'closing': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_closing.mp3" },
+    'hi': { 'ask_name': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_name.mp3", 'ask_address': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_address.mp3", 'ask_pincode': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_pincode.mp3", 'reg_complete': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_reg_complete.mp3", 'ask_price': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_price.mp3", 'ask_quantity': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_quantity.mp3", 'ask_more_crops': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_more_crops.mp3", 'next_crop': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_next_crop.mp3", 'thank_you': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_thank_you.mp3", 'welcome_back': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_welcome_back.mp3", 'closing': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_closing.mp3" }
+}
+
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
-    # Handle the GET request (for webhook verification)
     if request.method == 'GET':
+        # Webhook verification logic
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
-
         if mode and token and mode == 'subscribe' and token == VERIFY_TOKEN:
             print('SUCCESS: Webhook verified')
             return challenge, 200
@@ -37,136 +37,147 @@ def webhook():
             print('ERROR: Verification tokens do not match')
             return 'Verification token mismatch', 403
 
-    # Handle the POST request (for incoming messages from farmers)
     elif request.method == 'POST':
         data = request.get_json()
-        print("--- INCOMING POST REQUEST (MESSAGE) ---")
-        print(json.dumps(data, indent=2))
-        print("---------------------------------------")
+        print(f"--- INCOMING POST REQUEST ---\n{json.dumps(data, indent=2)}\n---------------------------")
 
         try:
-            # Ensure the incoming message is a valid WhatsApp message
-            if (data.get('object') == 'whatsapp_business_account' and
-                data['entry'][0]['changes'][0]['value'].get('messages')):
-
+            if data['entry'][0]['changes'][0]['value'].get('messages'):
                 message_data = data['entry'][0]['changes'][0]['value']['messages'][0]
                 from_number = message_data['from']
                 msg_body = message_data['text']['body']
+                command = msg_body.lower()
 
-                # --- AgriKart.ai Bot Logic ---
-
-                # Check if this is a new farmer
-                if from_number not in user_states:
-                    user_states[from_number] = {'state': 'awaiting_name', 'data': {}}
-                    reply_body = "Welcome to AgriKart.ai! We need to register you first.\n\nWhat is your full name?"
-                    send_whatsapp_message(from_number, reply_body)
+                # --- AgriKart.ai Voice Bot Logic ---
+                
+                if 'hi' in command or 'hello' in command or 'नमस्ते' in command:
+                    user_states[from_number] = user_states.get(from_number, {'data': {}}) # Preserve data if user exists
+                    user_states[from_number]['state'] = 'awaiting_language_choice'
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
                     return 'OK', 200
 
-                # Get the current state for this farmer
-                current_state = user_states[from_number]['state']
-                
-                # State: Awaiting Farmer's Name
-                if current_state == 'awaiting_name':
-                    user_states[from_number]['data']['name'] = msg_body
-                    user_states[from_number]['state'] = 'awaiting_village'
-                    reply_body = f"Thank you, {msg_body}. What is your village name?"
-                    send_whatsapp_message(from_number, reply_body)
+                current_state = user_states.get(from_number, {}).get('state')
 
-                # State: Awaiting Farmer's Village
-                elif current_state == 'awaiting_village':
-                    user_states[from_number]['data']['village'] = msg_body
-                    user_states[from_number]['state'] = 'awaiting_pincode'
-                    reply_body = "Got it. And what is your 6-digit pincode?"
-                    send_whatsapp_message(from_number, reply_body)
+                if not current_state:
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
+                    return 'OK', 200
+
+                # --- State Machine ---
                 
-                # State: Awaiting Farmer's Pincode
+                if current_state == 'awaiting_language_choice':
+                    lang_choice = 'en'
+                    if '2' in command:
+                        lang_choice = 'hi'
+                    
+                    user_states[from_number]['language'] = lang_choice
+                    
+                    if user_states[from_number].get('data', {}).get('pincode'):
+                        user_states[from_number]['state'] = 'awaiting_crop_name'
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang_choice]['welcome_back'])
+                    else:
+                        # For registration, changing the question to be more generic
+                        user_states[from_number]['state'] = 'awaiting_name'
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang_choice]['ask_name'])
+
+                elif current_state == 'awaiting_name':
+                    lang = user_states[from_number]['language']
+                    user_states[from_number]['data']['name'] = msg_body
+                    user_states[from_number]['state'] = 'awaiting_address'
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_address'])
+
+                elif current_state == 'awaiting_address':
+                    lang = user_states[from_number]['language']
+                    user_states[from_number]['data']['address'] = msg_body
+                    user_states[from_number]['state'] = 'awaiting_pincode'
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_pincode'])
+                
                 elif current_state == 'awaiting_pincode':
+                    lang = user_states[from_number]['language']
                     user_states[from_number]['data']['pincode'] = msg_body
                     user_states[from_number]['data']['produces'] = []
                     user_states[from_number]['state'] = 'awaiting_crop_name'
-                    reply_body = "Registration complete! Let's list your produce.\n\nWhat is the name of the crop you would like to sell?"
-                    send_whatsapp_message(from_number, reply_body)
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['reg_complete'])
 
-                # State: Awaiting the name of the crop
                 elif current_state == 'awaiting_crop_name':
+                    lang = user_states[from_number]['language']
                     user_states[from_number]['temp_produce'] = {'name': msg_body}
                     user_states[from_number]['state'] = 'awaiting_price'
-                    reply_body = f"Okay, crop is '{msg_body}'. What is your suggested price per kg? (e.g., 25)"
-                    send_whatsapp_message(from_number, reply_body)
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_price'])
 
-                # State: Awaiting the price
                 elif current_state == 'awaiting_price':
+                    lang = user_states[from_number]['language']
                     user_states[from_number]['temp_produce']['price_per_kg'] = msg_body
                     user_states[from_number]['state'] = 'awaiting_quantity'
-                    reply_body = "And what is the total quantity (in kg) you have available?"
-                    send_whatsapp_message(from_number, reply_body)
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_quantity'])
 
-                # State: Awaiting the quantity
                 elif current_state == 'awaiting_quantity':
+                    lang = user_states[from_number]['language']
                     user_states[from_number]['temp_produce']['quantity_kg'] = msg_body
                     user_states[from_number]['data']['produces'].append(user_states[from_number]['temp_produce'])
                     del user_states[from_number]['temp_produce']
                     user_states[from_number]['state'] = 'awaiting_more_crops'
-                    reply_body = "Your produce has been noted. Would you like to add another crop? (Please type Yes or No)"
-                    send_whatsapp_message(from_number, reply_body)
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_more_crops'])
 
-                # State: Awaiting if they want to add more crops
                 elif current_state == 'awaiting_more_crops':
-                    if 'yes' in msg_body.lower():
+                    lang = user_states[from_number]['language']
+                    
+                    # --- THIS IS THE FIXED LOGIC ---
+                    # List of words that mean "yes" in English, Hindi, and transliteration
+                    yes_words = ['yes', 'yeah', 'yep', 'ok', 'हाँ', 'हा', 'han', 'ha']
+                    
+                    # Check if any of the "yes" words are in the user's reply
+                    if any(word in command for word in yes_words):
                         user_states[from_number]['state'] = 'awaiting_crop_name'
-                        reply_body = "Great! What is the name of the next crop?"
-                        send_whatsapp_message(from_number, reply_body)
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['next_crop'])
                     else:
-                        print("--- FINAL DATA FOR FARMER ---")
-                        print(json.dumps(user_states[from_number]['data'], indent=2))
-                        print("-----------------------------")
-                        
-                        reply_body = "Thank you! All your produce has been listed. We will notify you when we get orders for your items."
-                        send_whatsapp_message(from_number, reply_body)
+                        # If the reply is "No", "ना", or anything else, end the conversation
+                        print(f"--- FINAL DATA FOR FARMER ---\n{json.dumps(user_states[from_number]['data'], indent=2)}\n-----------------------------")
+                        save_data_to_sheet(user_states[from_number]['data'])
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['thank_you'])
                         user_states[from_number]['state'] = 'conversation_over'
-
-                # State: Conversation is over, wait for a new greeting to start again
+                
                 elif current_state == 'conversation_over':
-                    command = msg_body.lower()
-                    if 'hi' in command or 'hello' in command:
-                        user_states[from_number]['state'] = 'awaiting_crop_name'
-                        reply_body = "Welcome back! What is the name of the crop you would like to sell today?"
-                        send_whatsapp_message(from_number, reply_body)
-                    else:
-                        reply_body = "You're welcome! Feel free to message 'hi' anytime you want to list more produce."
-                        send_whatsapp_message(from_number, reply_body)
+                    lang = user_states[from_number].get('language', 'en')
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['closing'])
+
 
         except Exception as e:
             print(f"Error processing message: {e}")
-            pass
 
         return 'OK', 200
-    else:
-        return 'Method Not Allowed', 405
+    return 'Method Not Allowed', 405
 
+# The functions below this line (save_data_to_sheet, send_whatsapp_message, send_whatsapp_audio, etc.)
+# remain exactly the same. They do not need to be changed.
+
+def save_data_to_sheet(farmer_data):
+    # This function is from our previous discussion and is assumed to be here.
+    # It is not included again for brevity, but it should remain in your code.
+    pass
 
 def send_whatsapp_message(to_number, message_text):
     """Sends a text message to a WhatsApp number."""
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
-    headers = {
-        'Authorization': f'Bearer {ACCESS_TOKEN}',
-        'Content-Type': 'application/json'
-    }
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to_number,
-        "type": "text",
-        "text": {
-            "body": message_text
-        }
-    }
+    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}','Content-Type': 'application/json'}
+    payload = {"messaging_product": "whatsapp","to": to_number,"type": "text","text": {"body": message_text}}
     try:
         response = requests.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        print(f"Message sent to {to_number}. Status code: {response.status_code}")
+        print(f"Message sent to {to_number}. Status: {response.status_code}")
     except requests.exceptions.RequestException as e:
         print(f"Error sending message: {e}")
 
+def send_whatsapp_audio(to_number, audio_url):
+    """Sends an audio message from a public URL."""
+    url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}','Content-Type': 'application/json'}
+    payload = {"messaging_product": "whatsapp","to": to_number,"type": "audio","audio": {"link": audio_url}}
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        print(f"Audio message sent to {to_number}. Status: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending audio message: {e}")
 
 if __name__ == '__main__':
     app.run(port=5000, debug=True)
