@@ -9,6 +9,7 @@ from rest_framework import generics
 import requests
 from decimal import Decimal
 from collections import defaultdict
+from django.db import transaction
 
 class CartViewSet(viewsets.ModelViewSet):
     serializer_class = CartItemSerializer
@@ -21,51 +22,71 @@ class CartViewSet(viewsets.ModelViewSet):
         buyer = Buyer.objects.get(user=self.request.user)
         serializer.save(buyer=buyer)
 
+
+
+from django.db import transaction
+from decimal import Decimal
+
 class CreateOrderFromCart(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         buyer = Buyer.objects.get(user=request.user)
+        items = CartItem.objects.select_related('produce').filter(buyer=buyer)
 
-        # Step 1: Get cart items and materialize them (before delete)
-        items = list(CartItem.objects.filter(buyer=buyer))
         if not items:
             return Response({"error": "Cart empty"}, status=400)
 
-        # Step 2: Create Order and attach items
-        order = Order.objects.create(buyer=buyer)
-        order.items.set(items)
+        with transaction.atomic():
+            notify_data = {}
 
-        # Step 3: Notify all farmers involved
-        self.notify_farmers_on_order(items)
+            for item in items:
+                produce = item.produce
+                if produce.quantity < item.quantity:
+                    return Response({
+                        "error": f"Insufficient stock for {produce.name} (Available: {produce.quantity}, Requested: {item.quantity})"
+                    }, status=400)
 
-        # Step 4: Clear cart
-        CartItem.objects.filter(buyer=buyer).delete()
+                # 📉 Deduct stock
+                produce.quantity -= item.quantity
+
+                # ❌ Auto-disable if no stock
+                if produce.quantity <= 0:
+                    produce.is_active = False
+
+                produce.save()
+
+                # 📬 Prepare notification per farmer
+                farmer_phone = produce.farmer.user.phone_number
+                if farmer_phone not in notify_data:
+                    notify_data[farmer_phone] = []
+                notify_data[farmer_phone].append({
+                    "produce": produce.name,
+                    "quantity_bought": float(item.quantity),
+                    "remaining_stock": float(produce.quantity)
+                })
+
+            order = Order.objects.create(buyer=buyer)
+            order.items.set(items)
+            items.delete()
+
+        # 🔔 Notify farmers outside transaction
+        for farmer_phone, produce_list in notify_data.items():
+            self.notify_farmer_on_order(farmer_phone, produce_list)
 
         return Response(OrderSerializer(order).data)
 
-    def notify_farmers_on_order(self, items):
-        farmers = defaultdict(list)
+    def notify_farmer_on_order(self, farmer_phone, items):
+        payload = {
+            "phone_number": farmer_phone,
+            "items": items
+        }
+        try:
+            print(f"📡 Notifying farmer {farmer_phone} with items: {items}")
+            requests.post("http://localhost:5000/notify-farmer", json=payload)
+        except Exception as e:
+            print(f"❌ Failed to notify farmer {farmer_phone}: {e}")
 
-        for item in items:
-            farmer = item.produce.farmer
-            farmer_phone = farmer.user.phone_number
-            farmers[farmer_phone].append({
-                "produce": item.produce.name,
-                "quantity": float(item.quantity),  
-                "price": float(item.produce.price)  
-            })
-
-        for phone, produce_list in farmers.items():
-            payload = {
-                "phone_number": phone,
-                "items": produce_list
-            }
-            try:
-                print(f"📡 Notifying farmer {phone} with items: {produce_list}")
-                requests.post("http://localhost:5000/notify-farmer", json=payload, timeout=3)
-            except Exception as e:
-                print(f"❌ Failed to notify farmer {phone}: {e}")
 
 class ConfirmOrder(APIView):
     permission_classes = [IsAuthenticated]

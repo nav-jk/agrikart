@@ -255,18 +255,31 @@ def webhook():
         print(f"Error: {e}")
 
     return 'OK', 200
+
 @app.route('/notify-farmer', methods=['POST'])
 def notify_farmer():
-    data = request.get_json()
-    phone = data.get("phone_number")
-    items = data.get("items", [])
+    try:
+        data = request.json
+        phone = data.get('phone_number')
+        items = data.get('items', [])
 
-    msg = f"🧾 New Order!\n"
-    for i, item in enumerate(items, 1):
-        msg += f"{i}. {item['produce']} - {item['quantity']}kg @ ₹{item['price']}/kg\n"
+        if not phone or not items:
+            return jsonify({"error": "Invalid data"}), 400
 
-    send_whatsapp_message(phone, msg)
-    return jsonify({"status": "sent"}), 200
+        message_lines = ["🧾 *Order Update:*"]
+        for item in items:
+            message_lines.append(
+                f"📦 {item['produce']}: bought {item['quantity_bought']}kg\n"
+                f"📊 Remaining stock: {item['remaining_stock']}kg"
+            )
+        message = "\n\n".join(message_lines)
+        send_whatsapp_message(phone, message)
+
+        return jsonify({"status": "sent"}), 200
+    except Exception as e:
+        print(f"❌ Error in /notify-farmer: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 
 

@@ -27,5 +27,7 @@ class Produce(models.Model):
     quantity = models.PositiveIntegerField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='Others')
 
+    is_active = models.BooleanField(default=True)  # ✅ New field for availability
+
     def __str__(self):
-        return f"{self.name} ({self.quantity}) - {self.price}"
+        return f"{self.name} ({self.quantity}) - ₹{self.price}"
