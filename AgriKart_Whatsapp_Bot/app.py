@@ -123,7 +123,7 @@ def webhook():
                     
                     # --- THIS IS THE FIXED LOGIC ---
                     # List of words that mean "yes" in English, Hindi, and transliteration
-                    yes_words = ['yes', 'yeah', 'yep', 'ok', 'हाँ', 'हा', 'han', 'ha']
+                    yes_words = ['yes', 'yeah', 'yep', 'ok', 'हाँ', 'हा', 'han', 'ha','haan']
                     
                     # Check if any of the "yes" words are in the user's reply
                     if any(word in command for word in yes_words):
