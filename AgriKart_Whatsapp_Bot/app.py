@@ -52,6 +52,22 @@ AUDIO_CLIPS = {
 
 
 # --- API Helper Functions ---
+def check_backend_connection():
+    try:
+        url = f"{API_BASE_URL}/api/v1/auth/token/"
+        test_payload = {"username": "dummy", "password": "dummy"}
+        response = requests.post(url, json=test_payload, timeout=3)
+
+        if response.status_code == 401:
+            print(f"✅ Backend reachable at {API_BASE_URL} (got 401 as expected)")
+        else:
+            print(f"⚠️ Backend responded with unexpected status: {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Failed to connect to backend at {API_BASE_URL}: {e}")
+
+
+
+
 def register_farmer_api(user_data):
     """Calls the backend API to register a new farmer."""
     url = f"{API_BASE_URL}/api/v1/auth/signup/farmer/"
@@ -88,22 +104,30 @@ def login_farmer_api(username, password):
         return None
 
 def add_produce_api(produce_data, access_token):
-    """Calls the backend API to add a new produce item."""
+    """POST /produce/ to add new produce item for the logged-in farmer."""
     url = f"{API_BASE_URL}/api/v1/produce/"
-    headers = {'Authorization': f'Bearer {access_token}'}
-    payload = {
-        "name": produce_data.get('name'),
-        "price_per_kg": float(produce_data.get('price_per_kg', 0)),
-        "quantity_kg": float(produce_data.get('quantity_kg', 0))
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
     }
-    print(f"--- Attempting to add produce: POST {url} ---")
+
+    produce_payload = {
+        "name": produce_data.get('name'),
+        "price": float(produce_data.get('price_per_kg', 0)),
+        "quantity": float(produce_data.get('quantity_kg', 0)),
+        "category": "Others"  # Optional default
+    }
+
+    print(f"--- Attempting to create produce: POST {url} ---")
+    print(f"Payload: {json.dumps(produce_payload, indent=2)}")
+
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = requests.post(url, json=produce_payload, headers=headers)
         response.raise_for_status()
-        print("--- Add produce successful ---")
+        print("--- Produce created successfully ---")
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"--- ERROR in add produce API: {e.response.text if e.response else e} ---")
+        print(f"--- ERROR in create produce API: {e.response.text if e.response else e} ---")
         return None
 
 # --- Messaging Functions ---
@@ -257,4 +281,6 @@ def webhook():
     return 'Method Not Allowed', 405
 
 if __name__ == '__main__':
+    print("🚀 Starting WhatsApp Flask bot...")
+    check_backend_connection()
     app.run(port=5000, debug=True)
