@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -51,275 +51,225 @@ AUDIO_CLIPS = {
 }
 
 
-# --- API Helper Functions ---
-def check_backend_connection():
+# --- API Helpers ---
+def check_farmer_exists(phone_number):
+    url = f"http://localhost:8000/api/v1/farmer/check/{phone_number}/"
     try:
-        url = f"{API_BASE_URL}/api/v1/auth/token/"
-        test_payload = {"username": "dummy", "password": "dummy"}
-        response = requests.post(url, json=test_payload, timeout=3)
-
-        if response.status_code == 401:
-            print(f"✅ Backend reachable at {API_BASE_URL} (got 401 as expected)")
-        else:
-            print(f"⚠️ Backend responded with unexpected status: {response.status_code}")
+        response = requests.get(url)
+        return response.status_code == 200 and response.json().get("exists", False)
     except requests.exceptions.RequestException as e:
-        print(f"❌ Failed to connect to backend at {API_BASE_URL}: {e}")
-
-
-
+        print(f"ERROR checking farmer existence: {e}")
+        return False
 
 def register_farmer_api(user_data):
-    """Calls the backend API to register a new farmer."""
     url = f"{API_BASE_URL}/api/v1/auth/signup/farmer/"
     payload = {
-        "username": user_data.get('username'),
-        "password": user_data.get('password'),
-        "email": f"{user_data.get('username')}@agrikart.ai", # Auto-generates dummy email
-        "phone_number": user_data.get('phone_number'),
-        "name": user_data.get('name'),
-        "address": user_data.get('address') # This now includes village
+        "username": user_data['username'],
+        "password": user_data['password'],
+        "email": f"{user_data['username']}@agrikart.ai",
+        "phone_number": user_data['phone_number'],
+        "name": user_data['name'],
+        "address": user_data['address']
     }
-    print(f"--- Attempting to register farmer: POST {url} ---")
     try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        print("--- Farmer registration successful ---")
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"--- ERROR in farmer registration API: {e.response.text if e.response else e} ---")
+        res = requests.post(url, json=payload)
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        print(f"Error in register_farmer_api: {e}")
         return None
 
 def login_farmer_api(username, password):
-    """Calls the backend API to log in and get JWT tokens."""
     url = f"{API_BASE_URL}/api/v1/auth/token/"
     payload = {"username": username, "password": password}
-    print(f"--- Attempting to login farmer: POST {url} ---")
     try:
-        response = requests.post(url, json=payload)
-        response.raise_for_status()
-        print("--- Farmer login successful ---")
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"--- ERROR in farmer login API: {e.response.text if e.response else e} ---")
+        res = requests.post(url, json=payload)
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        print(f"Error in login_farmer_api: {e}")
         return None
 
 def add_produce_api(produce_data, access_token):
-    """POST /produce/ to add new produce item for the logged-in farmer."""
     url = f"{API_BASE_URL}/api/v1/produce/"
     headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json'
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
     }
-
-    produce_payload = {
-        "name": produce_data.get('name'),
-        "price": float(produce_data.get('price_per_kg', 0)),
-        "quantity": float(produce_data.get('quantity_kg', 0)),
-        "category": "Others"  # Optional default
+    payload = {
+        "name": produce_data['name'],
+        "price": float(produce_data['price_per_kg']),
+        "quantity": float(produce_data['quantity_kg']),
+        "category": "Others"
     }
-
-    print(f"--- Attempting to create produce: POST {url} ---")
-    print(f"Payload: {json.dumps(produce_payload, indent=2)}")
-
     try:
-        response = requests.post(url, json=produce_payload, headers=headers)
-        response.raise_for_status()
-        print("--- Produce created successfully ---")
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"--- ERROR in create produce API: {e.response.text if e.response else e} ---")
+        res = requests.post(url, headers=headers, json=payload)
+        res.raise_for_status()
+        return res.json()
+    except Exception as e:
+        print(f"Error in add_produce_api: {e}")
         return None
 
-# --- Messaging Functions ---
-def send_whatsapp_message(to_number, message_text):
-    """Sends a text message to a WhatsApp number."""
+# --- Messaging Helpers ---
+def send_whatsapp_message(to, msg):
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
-    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}','Content-Type': 'application/json'}
-    payload = {"messaging_product": "whatsapp","to": to_number,"type": "text","text": {"body": message_text}}
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        print(f"Error sending text message: {e}")
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
+    payload = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": msg}}
+    requests.post(url, headers=headers, json=payload)
 
-def send_whatsapp_audio(to_number, audio_url):
-    """Sends an audio message from a public URL."""
+def send_whatsapp_audio(to, url_link):
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
-    headers = {'Authorization': f'Bearer {ACCESS_TOKEN}','Content-Type': 'application/json'}
-    payload = {"messaging_product": "whatsapp","to": to_number,"type": "audio","audio": {"link": audio_url}}
-    try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        print(f"Audio message sent to {to_number}.")
-    except requests.exceptions.RequestException as e:
-        print(f"Error sending audio message: {e}")
+    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
+    payload = {"messaging_product": "whatsapp", "to": to, "type": "audio", "audio": {"link": url_link}}
+    requests.post(url, headers=headers, json=payload)
 
-def check_farmer_exists(phone_number):
-    """Check if a farmer exists by hitting /api/v1/farmer/<phone_number>/"""
-    url = f"http://localhost:8000/api/v1/farmer/{phone_number}/"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return True
-        return False
-    except requests.exceptions.RequestException as e:
-        print(f"--- ERROR checking farmer existence: {e} ---")
-        return False
-
-
-# --- Main Webhook Logic ---
+# --- Webhook ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'GET':
-        mode = request.args.get('hub.mode')
-        token = request.args.get('hub.verify_token')
-        challenge = request.args.get('hub.challenge')
-        if mode and token and mode == 'subscribe' and token == VERIFY_TOKEN:
-            return challenge, 200
-        else:
-            return 'Verification token mismatch', 403
+        if (request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.verify_token') == VERIFY_TOKEN):
+            return request.args.get('hub.challenge'), 200
+        return 'Unauthorized', 403
 
-    elif request.method == 'POST':
-        data = request.get_json()
-        print(f"--- INCOMING POST REQUEST ---\n{json.dumps(data, indent=2)}\n---------------------------")
+    data = request.get_json()
+    try:
+        message = data['entry'][0]['changes'][0]['value']['messages'][0]
+        from_number = message['from']
+        msg_body = message['text']['body']
+        command = msg_body.lower()
 
-        try:
-            if data['entry'][0]['changes'][0]['value'].get('messages'):
-                message_data = data['entry'][0]['changes'][0]['value']['messages'][0]
-                from_number = message_data['from']
-                msg_body = message_data['text']['body']
-                command = msg_body.lower()
+        # Init state if needed
+        if from_number not in user_states:
+            user_states[from_number] = {"data": {}}
 
-                # Always start with language choice on a greeting
-                if 'hi' in command or 'hello' in command or 'नमस्ते' in command:
-                    print(f"📞 User {from_number} sent greeting. Checking farmer existence...")
+        current_state = user_states[from_number].get("state")
 
-                    user_states[from_number] = user_states.get(from_number, {'data': {}})
-                    lang = user_states[from_number].get('language', 'en')
+        # Handle greeting
+        if command in ['hi', 'hello', 'नमस्ते']:
+            print(f"📞 User {from_number} sent greeting. Checking farmer existence...")
+            if check_farmer_exists(from_number):
+                user_states[from_number]['state'] = 'awaiting_lang_after_exists'
+                send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])  # Ask language
+            else:
+                user_states[from_number]['state'] = 'awaiting_language_choice'
+                send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
+            return 'OK', 200
 
-                    if check_farmer_exists(from_number):
-                        print("✅ Farmer exists.")
-
-                        last_password = user_states[from_number]['data'].get('password')
-
-                        if last_password:
-                            print("🔐 Attempting auto-login...")
-                            login_response = login_farmer_api(from_number, last_password)
-                            if login_response and login_response.get('access'):
-                                user_states[from_number]['access_token'] = login_response['access']
-                                user_states[from_number]['state'] = 'awaiting_crop_name'
-                                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['welcome_back'])
-                            else:
-                                send_whatsapp_message(from_number, "Welcome back! Please enter your password to log in.")
-                                user_states[from_number]['state'] = 'awaiting_password'
-                        else:
-                            send_whatsapp_message(from_number, "Welcome back! Please enter your password to log in.")
-                            user_states[from_number]['state'] = 'awaiting_password'
-
-                    else:
-                        print("👤 Farmer does not exist. Starting registration.")
-                        user_states[from_number]['state'] = 'awaiting_language_choice'
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
-
-                    return 'OK', 200
-
-                current_state = user_states.get(from_number, {}).get('state')
-
-                if not current_state:
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
-                    return 'OK', 200
-
-                # --- State Machine ---
-                
-                if current_state == 'awaiting_language_choice':
-                    lang = 'en'
-                    if '2' in command:
-                        lang = 'hi'
-                    user_states[from_number]['language'] = lang
-                    
-                    if user_states[from_number].get('data', {}).get('pincode'):
-                        user_states[from_number]['state'] = 'awaiting_crop_name'
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['welcome_back'])
-                    else:
-                        user_states[from_number]['state'] = 'awaiting_name'
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_name'])
-
-                elif current_state == 'awaiting_name':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['data']['name'] = msg_body
-                    user_states[from_number]['state'] = 'awaiting_address'
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_address'])
-
-                elif current_state == 'awaiting_address':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['data']['address'] = msg_body
-                    user_states[from_number]['state'] = 'awaiting_password'
+        # --- State Machine ---
+        if current_state == 'awaiting_lang_after_exists':
+            lang = 'en' if '1' in command else 'hi'
+            user_states[from_number]['language'] = lang
+            last_password = user_states[from_number]['data'].get('password')
+            if last_password:
+                login_resp = login_farmer_api(from_number, last_password)
+                if login_resp and login_resp.get('access'):
+                    user_states[from_number]['access_token'] = login_resp['access']
+                    user_states[from_number]['state'] = 'awaiting_crop_name'
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['welcome_back'])
+                else:
                     send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_password'])
-                
-                elif current_state == 'awaiting_password':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['data']['password'] = msg_body
-                    user_states[from_number]['data']['username'] = from_number
-                    user_states[from_number]['data']['phone_number'] = from_number
+                    user_states[from_number]['state'] = 'awaiting_password'
+            else:
+                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_password'])
+                user_states[from_number]['state'] = 'awaiting_password'
 
-                    if register_farmer_api(user_states[from_number]['data']):
-                        login_response = login_farmer_api(from_number, msg_body)
-                        if login_response and login_response.get('access'):
-                            user_states[from_number]['access_token'] = login_response['access']
-                            user_states[from_number]['state'] = 'awaiting_crop_name'
-                            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['reg_complete'])
-                        else:
-                            send_whatsapp_message(from_number, "Registration was successful, but we couldn't log you in. Please message 'hi' to try again.")
-                    else:
-                        send_whatsapp_message(from_number, "Sorry, registration failed. This phone number might already be registered. Please message 'hi' to start over.")
+        elif current_state == 'awaiting_language_choice':
+            lang = 'en' if '1' in command else 'hi'
+            user_states[from_number]['language'] = lang
+            user_states[from_number]['state'] = 'awaiting_name'
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_name'])
 
-                elif current_state == 'awaiting_crop_name':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['temp_produce'] = {'name': msg_body}
-                    user_states[from_number]['state'] = 'awaiting_price'
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_price'])
+        elif current_state == 'awaiting_name':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['data']['name'] = msg_body
+            user_states[from_number]['state'] = 'awaiting_address'
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_address'])
 
-                elif current_state == 'awaiting_price':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['temp_produce']['price_per_kg'] = msg_body
-                    user_states[from_number]['state'] = 'awaiting_quantity'
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_quantity'])
+        elif current_state == 'awaiting_address':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['data']['address'] = msg_body
+            user_states[from_number]['state'] = 'awaiting_password'
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_password'])
 
-                elif current_state == 'awaiting_quantity':
-                    lang = user_states[from_number]['language']
-                    user_states[from_number]['temp_produce']['quantity_kg'] = msg_body
-                    access_token = user_states[from_number].get('access_token')
-                    
-                    if access_token and add_produce_api(user_states[from_number]['temp_produce'], access_token):
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_more_crops'])
-                    else:
-                        send_whatsapp_message(from_number, "Sorry, there was an error saving your produce. Your session might have expired. Please message 'hi' to start again.")
+        elif current_state == 'awaiting_password':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['data']['password'] = msg_body
+            user_states[from_number]['data']['username'] = from_number
+            user_states[from_number]['data']['phone_number'] = from_number
 
-                    del user_states[from_number]['temp_produce']
-                    user_states[from_number]['state'] = 'awaiting_more_crops'
-
-                elif current_state == 'awaiting_more_crops':
-                    lang = user_states[from_number]['language']
-                    yes_words = ['yes', 'yeah', 'yep', 'ok', 'हाँ', 'हा', 'han', 'ha']
-                    
-                    if any(word in command for word in yes_words):
+            if check_farmer_exists(from_number):
+                # login only
+                login_resp = login_farmer_api(from_number, msg_body)
+                if login_resp and login_resp.get('access'):
+                    user_states[from_number]['access_token'] = login_resp['access']
+                    user_states[from_number]['state'] = 'awaiting_crop_name'
+                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['welcome_back'])
+                else:
+                    send_whatsapp_message(from_number, "❌ Wrong password. Please try again.")
+            else:
+                if register_farmer_api(user_states[from_number]['data']):
+                    login_resp = login_farmer_api(from_number, msg_body)
+                    if login_resp and login_resp.get('access'):
+                        user_states[from_number]['access_token'] = login_resp['access']
                         user_states[from_number]['state'] = 'awaiting_crop_name'
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['next_crop'])
-                    else:
-                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['thank_you'])
-                        user_states[from_number]['state'] = 'conversation_over'
-                
-                elif current_state == 'conversation_over':
-                    lang = user_states[from_number].get('language', 'en')
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['closing'])
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['reg_complete'])
+                else:
+                    send_whatsapp_message(from_number, "❌ Registration failed. Try again with 'hi'.")
 
-        except Exception as e:
-            print(f"Error processing message: {e}")
+        elif current_state == 'awaiting_crop_name':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['temp_produce'] = {'name': msg_body}
+            user_states[from_number]['state'] = 'awaiting_price'
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_price'])
 
-        return 'OK', 200
-    return 'Method Not Allowed', 405
+        elif current_state == 'awaiting_price':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['temp_produce']['price_per_kg'] = msg_body
+            user_states[from_number]['state'] = 'awaiting_quantity'
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_quantity'])
+
+        elif current_state == 'awaiting_quantity':
+            lang = user_states[from_number]['language']
+            user_states[from_number]['temp_produce']['quantity_kg'] = msg_body
+            token = user_states[from_number].get('access_token')
+            if token and add_produce_api(user_states[from_number]['temp_produce'], token):
+                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_more_crops'])
+            else:
+                send_whatsapp_message(from_number, "❌ Failed to save produce.")
+            user_states[from_number]['state'] = 'awaiting_more_crops'
+
+        elif current_state == 'awaiting_more_crops':
+            lang = user_states[from_number]['language']
+            if command in ['yes', 'y', 'ok', 'हाँ', 'हां']:
+                user_states[from_number]['state'] = 'awaiting_crop_name'
+                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['next_crop'])
+            else:
+                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['thank_you'])
+                user_states[from_number]['state'] = 'conversation_over'
+
+        elif current_state == 'conversation_over':
+            lang = user_states[from_number]['language']
+            send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['closing'])
+
+    except Exception as e:
+        print(f"Error: {e}")
+
+    return 'OK', 200
+@app.route('/notify-farmer', methods=['POST'])
+def notify_farmer():
+    data = request.get_json()
+    phone = data.get("phone_number")
+    items = data.get("items", [])
+
+    msg = f"🧾 New Order!\n"
+    for i, item in enumerate(items, 1):
+        msg += f"{i}. {item['produce']} - {item['quantity']}kg @ ₹{item['price']}/kg\n"
+
+    send_whatsapp_message(phone, msg)
+    return jsonify({"status": "sent"}), 200
+
+
 
 if __name__ == '__main__':
-    print("🚀 Starting WhatsApp Flask bot...")
-    check_backend_connection()
+    print("🚀 WhatsApp Bot Running...")
     app.run(port=5000, debug=True)
