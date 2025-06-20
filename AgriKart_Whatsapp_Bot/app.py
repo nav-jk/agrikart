@@ -52,8 +52,24 @@ AUDIO_CLIPS = {
 
 
 # --- API Helpers ---
+def get_farmer_produce(access_token):
+    """Fetch all produce for the logged-in farmer"""
+    url = f"{API_BASE_URL}/api/v1/produce/"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"❌ Failed to fetch produce. Status: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"❌ Error fetching produce list: {e}")
+        return []
+
+
 def check_farmer_exists(phone_number):
-    url = f"http://localhost:8000/api/v1/farmer/check/{phone_number}/"
+    url = f"{API_BASE_URL}/api/v1/farmer/check/{phone_number}/"
     try:
         response = requests.get(url)
         return response.status_code == 200 and response.json().get("exists", False)
@@ -137,6 +153,28 @@ def webhook():
         from_number = message['from']
         msg_body = message['text']['body']
         command = msg_body.lower()
+
+                # 💼 Dashboard Command
+        if command in ['dashboard', 'my produce']:
+            access_token = user_states[from_number].get('access_token')
+            if not access_token:
+                send_whatsapp_message(from_number, "⚠️ You're not logged in. Please type 'hi' to start.")
+                return 'OK', 200
+
+            produce_list = get_farmer_produce(access_token)
+            if not produce_list:
+                send_whatsapp_message(from_number, "🧺 You have no produce listed yet.")
+                return 'OK', 200
+
+            lines = ["📊 *Your Produce Dashboard:*"]
+            for p in produce_list:
+                status = "✅" if p.get("is_active", True) else "❌"
+                lines.append(
+                    f"• {p['name']} - ₹{p['price']}/kg - {p['quantity']}kg {status}"
+                )
+
+            send_whatsapp_message(from_number, "\n".join(lines))
+            return 'OK', 200
 
         # Init state if needed
         if from_number not in user_states:
