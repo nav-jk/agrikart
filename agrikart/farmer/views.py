@@ -44,3 +44,16 @@ class ProduceViewSet(viewsets.ModelViewSet):
 def check_farmer_exists(request, phone_number):
     exists = Farmer.objects.filter(user__phone_number=phone_number).exists()
     return Response({"exists": exists})
+
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from .models import Produce
+from .serializers import ProduceNamePriceSerializer
+
+class ProducePricingListView(APIView):
+    def get(self, request):
+        queryset = Produce.objects.filter(quantity__gt=0, is_active=True)
+        serializer = ProduceNamePriceSerializer(queryset, many=True)
+        return Response(serializer.data)

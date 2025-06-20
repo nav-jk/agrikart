@@ -10,3 +10,6 @@ urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view()), 
     path('me/', MeView.as_view(), name='me'),
 ]
+
+
+#  /api/v1/farmer/produce/prices/

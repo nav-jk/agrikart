@@ -14,3 +14,12 @@ class FarmerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Farmer
         fields = ['id', 'name', 'address', 'produce']
+
+# serializers.py
+from rest_framework import serializers
+from .models import Produce
+
+class ProduceNamePriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Produce
+        fields = ['name', 'price']

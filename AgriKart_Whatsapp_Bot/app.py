@@ -3,6 +3,7 @@ import json
 import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+import time 
 
 load_dotenv()
 app = Flask(__name__)
@@ -52,24 +53,8 @@ AUDIO_CLIPS = {
 
 
 # --- API Helpers ---
-def get_farmer_produce(access_token):
-    """Fetch all produce for the logged-in farmer"""
-    url = f"{API_BASE_URL}/api/v1/produce/"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    try:
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"❌ Failed to fetch produce. Status: {response.status_code}")
-            return []
-    except Exception as e:
-        print(f"❌ Error fetching produce list: {e}")
-        return []
-
-
 def check_farmer_exists(phone_number):
-    url = f"{API_BASE_URL}/api/v1/farmer/check/{phone_number}/"
+    url = f"http://localhost:8000/api/v1/farmer/check/{phone_number}/"
     try:
         response = requests.get(url)
         return response.status_code == 200 and response.json().get("exists", False)
@@ -139,6 +124,73 @@ def send_whatsapp_audio(to, url_link):
     payload = {"messaging_product": "whatsapp", "to": to, "type": "audio", "audio": {"link": url_link}}
     requests.post(url, headers=headers, json=payload)
 
+
+
+# --- AI Integration ---
+
+def query_deepseek_pricing(crop_name, prices, lang):
+    avg_price = round(sum(prices) / len(prices), 2)
+    price_list_str = ', '.join(f"₹{p}" for p in prices)
+    print(price_list_str)
+    prompt = f"""Suggest a fair price per kg for selling {crop_name}. 
+    Other farmers are selling it at: {price_list_str}. 
+    Reply only with a short sentence like: "Recommended price is ₹X because similar prices are already being used."
+    {"Reply in Hindi." if lang == "hi" else "Reply in English."}
+    """
+
+
+    try:
+        res = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY')}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "deepseek/deepseek-r1-0528-qwen3-8b:free",
+                "messages": [{"role": "user", "content": prompt}]
+            }
+        )
+        res.raise_for_status()
+        return res.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        print(f"❌ DeepSeek error: {e}")
+        return "Sorry, couldn't generate a suggestion right now."
+
+def generate_tts_elevenlabs(text, lang='en', voice='Bella'):
+    try:
+        eleven_api_key = os.getenv('ELEVENLABS_API_KEY')
+        VOICE_ID = "EXAVITQu4vr4xnSDxMaL"  # You can customize this if needed
+
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}?optimize_streaming_latency=0"
+        headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": eleven_api_key
+        }
+
+        response = requests.post(url, headers=headers, json={
+            "text": text,
+            "model_id": "eleven_multilingual_v2",
+            "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
+        })
+
+        if response.status_code == 200:
+            filename = f"{int(time.time())}_{voice}.mp3"
+            path = os.path.join("static/audio", filename)
+            with open(path, 'wb') as f:
+                f.write(response.content)
+            return f"https://a597-59-182-97-29.ngrok-free.app/static/audio/{filename}"
+
+        else:
+            print(f"❌ ElevenLabs error: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"❌ Error generating audio via ElevenLabs: {e}")
+        return None
+
+    
+
 # --- Webhook ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
@@ -149,32 +201,19 @@ def webhook():
 
     data = request.get_json()
     try:
-        message = data['entry'][0]['changes'][0]['value']['messages'][0]
+        entry = data.get("entry", [])[0]
+        change = entry.get("changes", [])[0]
+        value = change.get("value", {})
+        messages = value.get("messages")
+
+        if not messages:
+            print("⚠️ Ignored non-message webhook event")
+            return 'OK', 200  # Ignore delivery/status/webhook pings
+
+        message = messages[0]
         from_number = message['from']
         msg_body = message['text']['body']
         command = msg_body.lower()
-
-                # 💼 Dashboard Command
-        if command in ['dashboard', 'my produce']:
-            access_token = user_states[from_number].get('access_token')
-            if not access_token:
-                send_whatsapp_message(from_number, "⚠️ You're not logged in. Please type 'hi' to start.")
-                return 'OK', 200
-
-            produce_list = get_farmer_produce(access_token)
-            if not produce_list:
-                send_whatsapp_message(from_number, "🧺 You have no produce listed yet.")
-                return 'OK', 200
-
-            lines = ["📊 *Your Produce Dashboard:*"]
-            for p in produce_list:
-                status = "✅" if p.get("is_active", True) else "❌"
-                lines.append(
-                    f"• {p['name']} - ₹{p['price']}/kg - {p['quantity']}kg {status}"
-                )
-
-            send_whatsapp_message(from_number, "\n".join(lines))
-            return 'OK', 200
 
         # Init state if needed
         if from_number not in user_states:
@@ -256,15 +295,52 @@ def webhook():
 
         elif current_state == 'awaiting_crop_name':
             lang = user_states[from_number]['language']
-            user_states[from_number]['temp_produce'] = {'name': msg_body}
-            user_states[from_number]['state'] = 'awaiting_price'
+            crop_name = msg_body.strip()
+            user_states[from_number]['temp_produce'] = {'name': crop_name}
+
+            # 🎯 Fetch price list from backend
+            try:
+                response = requests.get(f"{API_BASE_URL}/api/v1/farmer/produce/prices/")
+                produce_prices = response.json() if response.status_code == 200 else []
+            except Exception as e:
+                print(f"❌ Error fetching price list from API: {e}")
+                produce_prices = []
+
+            prices = [
+                float(item['price']) 
+                for item in produce_prices 
+                if crop_name.lower() in item['name'].lower()
+            ]
+
+            print("👀 Looking for:", crop_name.lower())
+            for item in produce_prices:
+                print("🌿 Found:", item['name'], "->", item['price'])
+
+            # 🤖 AI Recommendation
+            if prices:
+                ai_reply = query_deepseek_pricing(crop_name, prices, lang)
+                send_whatsapp_message(from_number, f"🤖 Suggestion:\n{ai_reply}")
+                audio_url = generate_tts_elevenlabs(ai_reply, lang)
+                if audio_url:
+                    send_whatsapp_audio(from_number, audio_url)
+            else:
+                send_whatsapp_message(from_number, "📉 Not enough data to suggest a price.")
+
+            # 🎙️ Ask for price explicitly no matter what
             send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_price'])
+
+            # ✅ Then switch to price entry
+            user_states[from_number]['state'] = 'awaiting_price'
+
+
+
 
         elif current_state == 'awaiting_price':
             lang = user_states[from_number]['language']
             user_states[from_number]['temp_produce']['price_per_kg'] = msg_body
             user_states[from_number]['state'] = 'awaiting_quantity'
             send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_quantity'])
+
 
         elif current_state == 'awaiting_quantity':
             lang = user_states[from_number]['language']
@@ -323,4 +399,5 @@ def notify_farmer():
 
 if __name__ == '__main__':
     print("🚀 WhatsApp Bot Running...")
+    app = Flask(__name__, static_folder="static")
     app.run(port=5000, debug=True)
