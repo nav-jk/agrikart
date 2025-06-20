@@ -5,6 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, permissions
 from .serializers import ProduceSerializer
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from .models import Farmer
+
+
 class FarmerViewSet(viewsets.ModelViewSet):
     queryset = Farmer.objects.all()
     serializer_class = FarmerSerializer
@@ -32,3 +38,9 @@ class ProduceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         farmer = Farmer.objects.get(user=self.request.user)
         serializer.save(farmer=farmer)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_farmer_exists(request, phone_number):
+    exists = Farmer.objects.filter(user__phone_number=phone_number).exists()
+    return Response({"exists": exists})

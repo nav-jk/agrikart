@@ -154,6 +154,19 @@ def send_whatsapp_audio(to_number, audio_url):
     except requests.exceptions.RequestException as e:
         print(f"Error sending audio message: {e}")
 
+def check_farmer_exists(phone_number):
+    """Check if a farmer exists by hitting /api/v1/farmer/<phone_number>/"""
+    url = f"http://localhost:8000/api/v1/farmer/{phone_number}/"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return True
+        return False
+    except requests.exceptions.RequestException as e:
+        print(f"--- ERROR checking farmer existence: {e} ---")
+        return False
+
+
 # --- Main Webhook Logic ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
@@ -179,9 +192,35 @@ def webhook():
 
                 # Always start with language choice on a greeting
                 if 'hi' in command or 'hello' in command or 'नमस्ते' in command:
+                    print(f"📞 User {from_number} sent greeting. Checking farmer existence...")
+
                     user_states[from_number] = user_states.get(from_number, {'data': {}})
-                    user_states[from_number]['state'] = 'awaiting_language_choice'
-                    send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
+                    lang = user_states[from_number].get('language', 'en')
+
+                    if check_farmer_exists(from_number):
+                        print("✅ Farmer exists.")
+
+                        last_password = user_states[from_number]['data'].get('password')
+
+                        if last_password:
+                            print("🔐 Attempting auto-login...")
+                            login_response = login_farmer_api(from_number, last_password)
+                            if login_response and login_response.get('access'):
+                                user_states[from_number]['access_token'] = login_response['access']
+                                user_states[from_number]['state'] = 'awaiting_crop_name'
+                                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['welcome_back'])
+                            else:
+                                send_whatsapp_message(from_number, "Welcome back! Please enter your password to log in.")
+                                user_states[from_number]['state'] = 'awaiting_password'
+                        else:
+                            send_whatsapp_message(from_number, "Welcome back! Please enter your password to log in.")
+                            user_states[from_number]['state'] = 'awaiting_password'
+
+                    else:
+                        print("👤 Farmer does not exist. Starting registration.")
+                        user_states[from_number]['state'] = 'awaiting_language_choice'
+                        send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])
+
                     return 'OK', 200
 
                 current_state = user_states.get(from_number, {}).get('state')
