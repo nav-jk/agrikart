@@ -1,89 +1,133 @@
 import { useEffect, useState } from 'react';
 import api from '../api/api';
-import '../styles/Me.css'; // Optional CSS
+import '../styles/Me.css'; // Optional: your custom styles
 
 const Me = () => {
   const [profile, setProfile] = useState(null);
-  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('access');
     if (!token) return;
 
-    api.get('/api/v1/auth/me/', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => {
-      setProfile(res.data);
-      return api.get('/api/v1/buyer/orders/mine/', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    })
-    .then(orderRes => {
-      setOrders(orderRes.data || []);
-    })
-    .catch(err => {
-      console.error('Error fetching profile or orders:', err);
-    });
+    api
+      .get('/api/v1/auth/me/', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => setProfile(res.data))
+      .catch((err) => console.error('Failed to load profile:', err));
   }, []);
+
+  const downloadReceipt = async (orderId) => {
+    const token = localStorage.getItem('access');
+    if (!token) return alert("Login required");
+
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/v1/auth/orders/${orderId}/receipt/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Download failed");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `AgriKart_Receipt_Order_${orderId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading receipt:", err);
+      alert("Failed to download receipt.");
+    }
+  };
 
   if (!profile) return <p>Loading profile...</p>;
 
+  const { user, buyer } = profile;
+  const orders = buyer?.orders || [];
+
   return (
-    <div className="profile-container">
-      <h2>My Profile</h2>
-      <div className="profile-info">
-        <p><strong>Name:</strong> {profile.user?.username || profile.user?.name}</p>
-        <p><strong>Phone:</strong> {profile.buyer?.user?.phone_number || profile.farmer?.user?.phone_number}</p>
-        <p><strong>Address:</strong> {profile.buyer?.address || profile.farmer?.address}</p>
-        <p><strong>Role:</strong> {profile.user?.is_farmer ? 'Farmer' : 'Buyer'}</p>
-      </div>
+    <div className="me-dashboard">
+      {/* Sidebar */}
+      <aside className="me-sidebar">
+        <div className="sidebar-header">
+          <h3>My Account</h3>
+        </div>
+        <ul className="sidebar-links">
+          <li className="active">Orders</li>
+          <li>Favorites</li>
+          <li>Payments</li>
+          <li>Addresses</li>
+        </ul>
+      </aside>
 
-      {!profile.user?.is_farmer && (
-        <>
-          <h3>Order History</h3>
+      {/* Main content */}
+      <main className="me-content">
+        {/* Top Banner */}
+        <div className="profile-banner">
+          <div className="profile-details">
+            <h2>{user.username}</h2>
+            <p>{user.phone_number} &nbsp;•&nbsp; {user.email || 'N/A'}</p>
+          </div>
+          <button className="edit-btn">Edit Profile</button>
+        </div>
+
+        {/* Orders Section */}
+        <div className="orders-section">
+          <h3>Active Orders</h3>
+
           {orders.length === 0 ? (
-            <p>No orders yet.</p>
+            <p className="no-orders">You haven’t placed any orders yet.</p>
           ) : (
-            <ul className="order-list">
-              {orders.map(order => (
-                <li key={order.id} className="order-item">
-                  <p><strong>Order #{order.id}</strong></p>
-                  <p>Status: <span className={`status ${order.status.toLowerCase()}`}>{order.status}</span></p>
-                  <p>Date: {new Date(order.created_at).toLocaleString()}</p>
+            <div className="order-cards">
+              {orders.map((order) => (
+                <div key={order.id} className="order-card">
+                  <div className="order-card-header">
+                    <div>
+                      <h4>Order #{order.id}</h4>
+                      <p>
+                        Status:{' '}
+                        <span className={`status ${order.status?.toLowerCase()}`}>
+                          {order.status}
+                        </span>
+                      </p>
+                      <p className="order-date">
+                        {new Date(order.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      {order.receipt_pdf_url && (
+                        <button
+                          className="receipt-btn"
+                          onClick={() => downloadReceipt(order.id)}
+                        >
+                          📄 Download Receipt
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                  <table className="order-table">
-                    <thead>
-                      <tr>
-                        <th>Produce</th>
-                        <th>Price</th>
-                        <th>Qty</th>
-                        <th>Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items.map((item, index) => {
-                        const { produce, quantity } = item;
-                        const subtotal = produce.price * quantity;
-                        return (
-                          <tr key={index}>
-                            <td>{produce.name}</td>
-                            <td>₹{produce.price}</td>
-                            <td>{quantity}</td>
-                            <td>₹{subtotal}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-
-                  <p className="order-total"><strong>Total:</strong> ₹{order.total}</p>
-                </li>
+                  <div className="order-card-body">
+                    <p><strong>Address:</strong> {buyer?.address || 'N/A'}</p>
+                    <div className="order-actions">
+                      <button className="track-btn">Track</button>
+                      <button className="help-btn">Help</button>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
-        </>
-      )}
+        </div>
+      </main>
     </div>
   );
 };

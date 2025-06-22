@@ -47,10 +47,14 @@ INSTALLED_APPS = [
     'farmer',
     'buyer',
     'drf_yasg',
-    'corsheaders'
+    'corsheaders',
+    'logistics'
 ]
 
 AUTH_USER_MODEL = 'api.User'
+
+DOMAIN = "http://localhost:8000"  # Or your actual domain/NGROK
+
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",

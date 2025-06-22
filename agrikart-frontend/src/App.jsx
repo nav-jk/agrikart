@@ -13,6 +13,10 @@ import Navbar from './components/Navbar';
 import BuyerDashboard from './pages/BuyerDashboard';
 import RequireBuyer from './routes/RequireBuyer';
 import Me from './pages/Me';
+import LogisticsMap from './pages/LogisticsMap';
+import LogisticsDashboard from './pages/LogisticsDashboard';
+import RequireLogistics from './routes/RequireLogistics';
+
 
 
 
@@ -46,6 +50,17 @@ function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/logistics/dashboard"
+          element={
+            <RequireAuth>
+              <RequireLogistics>
+                <LogisticsDashboard />
+              </RequireLogistics>
+            </RequireAuth>
+          }
+        />
+        <Route path="/logistics/map" element={<LogisticsMap />} />
       </Routes>
     </AuthProvider>
   );

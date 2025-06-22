@@ -376,23 +376,39 @@ def notify_farmer():
         data = request.json
         phone = data.get('phone_number')
         items = data.get('items', [])
+        order_id = data.get('order_id')
+        buyer_address = data.get('buyer_address')
+        courier_name = data.get('courier', 'Unknown')
 
         if not phone or not items:
             return jsonify({"error": "Invalid data"}), 400
 
-        message_lines = ["🧾 *Order Update:*"]
+        message_lines = [
+            f"🧾 *New Order Received!*",
+            f"📦 *Order ID:* {order_id}",
+            f"🚚 *Courier:* {courier_name}",
+            ""
+        ]
+
         for item in items:
             message_lines.append(
-                f"📦 {item['produce']}: bought {item['quantity_bought']}kg\n"
-                f"📊 Remaining stock: {item['remaining_stock']}kg"
+                f"🌽 {item['produce']}\n"
+                f"🪣 Quantity: {item['quantity_bought']}kg\n"
+                f"📦 Stock Left: {item['remaining_stock']}kg"
             )
-        message = "\n\n".join(message_lines)
-        send_whatsapp_message(phone, message)
+            message_lines.append("")
 
+        message_lines.append(f"📍 *Delivery Address:*\n{buyer_address}")
+
+        message = "\n".join(message_lines)
+
+        send_whatsapp_message(phone, message)
         return jsonify({"status": "sent"}), 200
+
     except Exception as e:
         print(f"❌ Error in /notify-farmer: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 
 

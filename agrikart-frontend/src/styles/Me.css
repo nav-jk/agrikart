@@ -1,99 +1,187 @@
-/* ========== Root Styles ========== */
-:root {
-  --primary-color: #ffd814;
-  --primary-hover: #f7ca00;
-  --accent-color: #2e7d32;
-  --text-color: #111;
-  --bg-light: #f9f9f9;
-  --bg-white: #fff;
-  --border-color: #ddd;
-  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+.me-dashboard {
+  display: flex;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f8fafc;
+  min-height: 100vh;
 }
 
-/* ========== Base Layout ========== */
-body {
-  font-family: var(--font-family);
-  background-color: var(--bg-light);
-  color: var(--text-color);
-  margin: 0;
+.me-sidebar {
+  width: 240px;
+  background-color: #f1f5f9;
+  padding: 2rem 1.5rem;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-header {
+  margin-bottom: 2rem;
+}
+
+.sidebar-header h3 {
+  font-size: 1.2rem;
+  color: #0f172a;
+  font-weight: bold;
+}
+
+.sidebar-links {
+  list-style: none;
   padding: 0;
 }
 
-/* ========== Profile Container ========== */
-.profile-container {
-  max-width: 960px;
-  margin: 3rem auto;
+.sidebar-links li {
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+}
+
+.sidebar-links li.active,
+.sidebar-links li:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.me-content {
+  flex: 1;
   padding: 2rem;
-  background-color: var(--bg-white);
-  border: 1px solid var(--border-color);
+}
+
+.profile-banner {
+  background-color: #0f172a;
+  color: white;
+  padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.profile-container h2 {
-  font-size: 2rem;
-  margin-bottom: 1.5rem;
-  color: var(--accent-color);
-}
-
-/* ========== Profile Info ========== */
-.profile-info {
-  margin-bottom: 2rem;
-  border: 1px solid #e4e4e4;
-  border-radius: 10px;
-  padding: 1.5rem;
-  background-color: #fcfcfc;
-}
-
-.profile-info p {
-  font-size: 1.05rem;
-  margin: 0.6rem 0;
-  color: #333;
-}
-
-.profile-info strong {
+.profile-details h2 {
+  font-size: 1.6rem;
   font-weight: 600;
-  color: #2e7d32;
 }
 
-/* ========== Order History ========== */
-.profile-container h3 {
-  font-size: 1.4rem;
-  color: #1b5e20;
+.profile-details p {
+  font-size: 1rem;
+  margin-top: 0.3rem;
+  color: #e2e8f0;
+}
+
+.edit-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.orders-section {
+  margin-top: 2rem;
+}
+
+.orders-section h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.no-orders {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.order-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.order-card {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 1rem;
 }
 
-.order-list {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
+.order-card-header h4 {
+  font-size: 1.1rem;
+  color: #0f172a;
+  margin-bottom: 0.3rem;
 }
 
-.order-list li {
-  background-color: #fff;
-  padding: 1rem 1.25rem;
-  margin-bottom: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-left: 4px solid var(--primary-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.025);
-  font-size: 0.97rem;
-  color: #333;
+.order-date {
+  font-size: 0.85rem;
+  color: #64748b;
 }
 
-/* ========== Responsive ========== */
-@media (max-width: 768px) {
-  .profile-container {
-    margin: 2rem 1rem;
-    padding: 1.5rem;
-  }
+.status {
+  font-weight: 600;
+  color: #16a34a;
+  text-transform: capitalize;
+}
 
-  .profile-container h2 {
-    font-size: 1.6rem;
-  }
+.order-card-body p {
+  margin-bottom: 0.6rem;
+  color: #1f2937;
+}
 
-  .profile-info p,
-  .order-list li {
-    font-size: 1rem;
-  }
+.order-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.track-btn,
+.help-btn,
+.receipt-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.track-btn {
+  background-color: #f97316;
+  color: white;
+}
+
+.track-btn:hover {
+  background-color: #ea580c;
+}
+
+.help-btn {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.help-btn:hover {
+  background-color: #cbd5e1;
+}
+
+.receipt-btn {
+  background-color: #10b981;
+  color: white;
+  text-decoration: none;
+}
+
+.receipt-btn:hover {
+  background-color: #059669;
 }

@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/v1/auth/', include('api.urls')),
     path('api/v1/buyer/', include('buyer.urls')),
     path('api/v1/farmer/', include('farmer.urls')),  # ✅ check/<phone_number>/ now works
+    path('api/v1/logistics/', include('logistics.urls')),
     path('api/v1/orders/create-from-cart/', CreateOrderFromCart.as_view()),
     path('api/v1/orders/<int:pk>/confirm/', ConfirmOrder.as_view()),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

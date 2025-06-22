@@ -30,6 +30,20 @@ const Navbar = () => {
           </Link>
         )}
 
+        {/* ✅ Profile Page Link */}
+        {user && (
+          <Link to="/me">
+            <i className="fas fa-user-circle"></i> Profile
+          </Link>
+        )}
+
+        {/* ✅ Logistics Dashboard Link */}
+        {user?.is_logistics && (
+          <Link to="/logistics/dashboard">
+            <i className="fas fa-shipping-fast"></i> Logistics
+          </Link>
+        )}
+
         {user ? (
           <button className="btn-logout" onClick={logout}>
             <i className="fas fa-sign-out-alt"></i> Logout

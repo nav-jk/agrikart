@@ -43,9 +43,17 @@ class BuyerSerializer(serializers.ModelSerializer):
         fields = ['id', 'address', 'cart', 'orders']
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = CartItemSerializer(many=True, read_only=True)
+    items = CartItemSerializer(many=True)
+    total = serializers.SerializerMethodField()
+    receipt_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ['id', 'items', 'status']
+        fields = ['id', 'status', 'created_at', 'items', 'total', 'receipt_pdf_url']
+
+    def get_total(self, obj):
+        return sum(item.produce.price * item.quantity for item in obj.items.all())
+
+    def get_receipt_pdf_url(self, obj):
+        return f"http://localhost:8000/api/v1/orders/{obj.id}/receipt/"
 

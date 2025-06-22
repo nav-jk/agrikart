@@ -24,18 +24,22 @@ const Login = () => {
       const res = await api.post('/api/v1/auth/token/', form);
       login(res.data.access);
 
-      // Decode token to extract user role
       const user = JSON.parse(atob(res.data.access.split('.')[1]));
+      console.log('Decoded login user:', user);
 
-      if (user.is_farmer) {
+      if (!user.is_farmer && !user.is_buyer) {
+        navigate('/logistics/dashboard');
+      } else if (user.is_farmer) {
         navigate('/dashboard/farmer');
       } else {
-        // Redirect with category filter if present
         const target = category
           ? `${redirect}?category=${encodeURIComponent(category)}`
           : redirect;
         navigate(target);
       }
+
+      console.log('Decoded login user:', user);
+
     } catch (err) {
       alert('Login failed. Please check your credentials.');
     }
