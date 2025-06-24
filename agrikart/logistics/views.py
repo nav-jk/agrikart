@@ -31,7 +31,7 @@ class NearbyOrdersView(APIView):
         logistics_lat = logistics.latitude
         logistics_lon = logistics.longitude
 
-        confirmed_orders = Order.objects.filter(status='CONFIRMED').prefetch_related('items__produce')
+        confirmed_orders = Order.objects.filter(status='PENDING').prefetch_related('items__produce')
         nearby_orders = []
 
         for order in confirmed_orders:
@@ -47,7 +47,7 @@ class NearbyOrdersView(APIView):
 
                 dist = haversine(logistics_lon, logistics_lat, farmer.longitude, farmer.latitude)
 
-                if dist <= 15:
+                if dist <= 1000:
                     nearby_orders.append({
                         "order_id": order.id,
                         "status": order.status,
@@ -70,7 +70,7 @@ class NearbyOrdersView(APIView):
             except Exception as e:
                 print(f"❌ Error processing order {order.id}: {e}")
                 continue
-
+        print(nearby_orders)
         return Response(nearby_orders, status=status.HTTP_200_OK)
 
 

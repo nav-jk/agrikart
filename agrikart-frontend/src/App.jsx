@@ -16,7 +16,7 @@ import Me from './pages/Me';
 import LogisticsMap from './pages/LogisticsMap';
 import LogisticsDashboard from './pages/LogisticsDashboard';
 import RequireLogistics from './routes/RequireLogistics';
-
+import PaymentSuccess from './pages/PaymentSuccess'; 
 
 
 
@@ -61,6 +61,7 @@ function App() {
           }
         />
         <Route path="/logistics/map" element={<LogisticsMap />} />
+         <Route path="/payment-success" element={<PaymentSuccess />} />
       </Routes>
     </AuthProvider>
   );
