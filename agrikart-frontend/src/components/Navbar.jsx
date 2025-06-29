@@ -10,7 +10,7 @@ const Navbar = () => {
       <div className="navbar-left">
         <Link to="/" className="navbar-brand">
           <span className="brand-icon" role="img" aria-label="logo">
-        <img src="./agrikart-logo.png" alt="AgriKart Logo" className="brand-logo" />
+        <img src="/agrikart-logo.png" alt="AgriKart Logo" className="brand-logo" />
       </span> AgriKart.ai
 
         </Link>

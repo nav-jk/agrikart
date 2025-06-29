@@ -8,7 +8,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 // Register Chart.js components and plugins
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
-import '../styles/Dashboard.css'; // Your enhanced custom styles
+import '../styles/Dashboard.css';
 
 const FarmerDashboard = () => {
   const { user } = useAuth();

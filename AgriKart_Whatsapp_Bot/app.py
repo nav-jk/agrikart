@@ -33,21 +33,23 @@ AUDIO_CLIPS = {
         'next_crop': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_next_crop.mp3",
         'thank_you': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_thank_you.mp3",
         'welcome_back': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_welcome_back.mp3",
-        'closing': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_closing.mp3"
+        'closing': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_closing.mp3",
+        'ask_loginpassword': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/en_ask_loginpassword.mp3",
     },
     'hi': {
-        'ask_name': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_name.mp3",
-        'ask_address': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_address.mp3",
-        'ask_pincode': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_pincode.mp3",
-        'ask_password': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_password.mp3",
-        'reg_complete': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_reg_complete.mp3",
-        'ask_price': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_price.mp3",
-        'ask_quantity': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_quantity.mp3",
-        'ask_more_crops': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_more_crops.mp3",
-        'next_crop': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_next_crop.mp3",
-        'thank_you': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_thank_you.mp3",
-        'welcome_back': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_welcome_back.mp3",
-        'closing': "https://raw.github.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_closing.mp3"
+        'ask_name': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_name.mp3",
+        'ask_address': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_address.mp3",
+        'ask_pincode': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_pincode.mp3",
+        'ask_password': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_password.mp3",
+        'reg_complete': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_reg_complete.mp3",
+        'ask_price': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_price.mp3",
+        'ask_quantity': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_quantity.mp3",
+        'ask_more_crops': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_more_crops.mp3",
+        'next_crop': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_next_crop.mp3",
+        'thank_you': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_thank_you.mp3",
+        'welcome_back': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_welcome_back.mp3",
+        'closing': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_closing.mp3",
+        'ask_loginpassword': "https://raw.githubusercontent.com/debdip4/agrikartwhatsappbot/main/Audio_files/hi_ask_loginpassword.mp3",
     }
 }
 
@@ -192,10 +194,11 @@ def generate_tts_elevenlabs(text, lang='en', voice='Bella'):
     
 
 # --- Webhook ---
+# --- Webhook ---
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'GET':
-        if (request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.verify_token') == VERIFY_TOKEN):
+        if request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.verify_token') == VERIFY_TOKEN:
             return request.args.get('hub.challenge'), 200
         return 'Unauthorized', 403
 
@@ -208,22 +211,24 @@ def webhook():
 
         if not messages:
             print("⚠️ Ignored non-message webhook event")
-            return 'OK', 200  # Ignore delivery/status/webhook pings
+            return 'OK', 200
 
         message = messages[0]
         from_number = message['from']
         msg_body = message['text']['body']
-        command = msg_body.lower()
+        command = msg_body.strip().lower()  # ✅ Properly sanitized
+        print(f"📩 Message from {from_number}: '{command}'")
 
-        # Init state if needed
+        # Initialize state if new user
         if from_number not in user_states:
             user_states[from_number] = {"data": {}}
 
         current_state = user_states[from_number].get("state")
+        print(f"🔁 Current state for {from_number}: {current_state}")
 
-        # Handle greeting
+        # Greeting to start flow
         if command in ['hi', 'hello', 'नमस्ते']:
-            print(f"📞 User {from_number} sent greeting. Checking farmer existence...")
+            print(f"📞 Greeting received from {from_number}. Checking existence...")
             if check_farmer_exists(from_number):
                 user_states[from_number]['state'] = 'awaiting_lang_after_exists'
                 send_whatsapp_audio(from_number, AUDIO_CLIPS['welcome'])  # Ask language
@@ -247,7 +252,7 @@ def webhook():
                     send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_password'])
                     user_states[from_number]['state'] = 'awaiting_password'
             else:
-                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_password'])
+                send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_loginpassword'])
                 user_states[from_number]['state'] = 'awaiting_password'
 
         elif current_state == 'awaiting_language_choice':
@@ -275,7 +280,6 @@ def webhook():
             user_states[from_number]['data']['phone_number'] = from_number
 
             if check_farmer_exists(from_number):
-                # login only
                 login_resp = login_farmer_api(from_number, msg_body)
                 if login_resp and login_resp.get('access'):
                     user_states[from_number]['access_token'] = login_resp['access']
@@ -290,33 +294,24 @@ def webhook():
                         user_states[from_number]['access_token'] = login_resp['access']
                         user_states[from_number]['state'] = 'awaiting_crop_name'
                         send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['reg_complete'])
-                else:
-                    send_whatsapp_message(from_number, "❌ Registration failed. Try again with 'hi'.")
+                    else:
+                        send_whatsapp_message(from_number, "❌ Registration failed. Try again with 'hi'.")
 
         elif current_state == 'awaiting_crop_name':
             lang = user_states[from_number]['language']
             crop_name = msg_body.strip()
             user_states[from_number]['temp_produce'] = {'name': crop_name}
 
-            # 🎯 Fetch price list from backend
             try:
                 response = requests.get(f"{API_BASE_URL}/api/v1/farmer/produce/prices/")
                 produce_prices = response.json() if response.status_code == 200 else []
             except Exception as e:
-                print(f"❌ Error fetching price list from API: {e}")
+                print(f"❌ Error fetching price list: {e}")
                 produce_prices = []
 
-            prices = [
-                float(item['price']) 
-                for item in produce_prices 
-                if crop_name.lower() in item['name'].lower()
-            ]
+            prices = [float(item['price']) for item in produce_prices if crop_name.lower() in item['name'].lower()]
+            print(f"👀 Price list found for '{crop_name}':", prices)
 
-            print("👀 Looking for:", crop_name.lower())
-            for item in produce_prices:
-                print("🌿 Found:", item['name'], "->", item['price'])
-
-            # 🤖 AI Recommendation
             if prices:
                 ai_reply = query_deepseek_pricing(crop_name, prices, lang)
                 send_whatsapp_message(from_number, f"🤖 Suggestion:\n{ai_reply}")
@@ -326,21 +321,14 @@ def webhook():
             else:
                 send_whatsapp_message(from_number, "📉 Not enough data to suggest a price.")
 
-            # 🎙️ Ask for price explicitly no matter what
             send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_price'])
-
-            # ✅ Then switch to price entry
             user_states[from_number]['state'] = 'awaiting_price'
-
-
-
 
         elif current_state == 'awaiting_price':
             lang = user_states[from_number]['language']
             user_states[from_number]['temp_produce']['price_per_kg'] = msg_body
             user_states[from_number]['state'] = 'awaiting_quantity'
             send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['ask_quantity'])
-
 
         elif current_state == 'awaiting_quantity':
             lang = user_states[from_number]['language']
@@ -355,8 +343,8 @@ def webhook():
         elif current_state == 'awaiting_more_crops':
             lang = user_states[from_number]['language']
             if command in ['yes', 'y', 'ok', 'हाँ', 'हां']:
-                user_states[from_number]['state'] = 'awaiting_crop_name'
                 send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['next_crop'])
+                user_states[from_number]['state'] = 'awaiting_crop_name'
             else:
                 send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['thank_you'])
                 user_states[from_number]['state'] = 'conversation_over'
@@ -366,9 +354,10 @@ def webhook():
             send_whatsapp_audio(from_number, AUDIO_CLIPS[lang]['closing'])
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"❌ Error in webhook: {e}")
 
     return 'OK', 200
+
 
 @app.route('/notify-farmer', methods=['POST'])
 def notify_farmer():
@@ -376,44 +365,73 @@ def notify_farmer():
         data = request.json
         phone = data.get('phone_number')
         items = data.get('items', [])
-        order_id = data.get('order_id')
-        buyer_address = data.get('buyer_address')
-        courier_name = data.get('courier', 'Unknown')
 
         if not phone or not items:
             return jsonify({"error": "Invalid data"}), 400
 
-        message_lines = [
-            f"🧾 *New Order Received!*",
-            f"📦 *Order ID:* {order_id}",
-            f"🚚 *Courier:* {courier_name}",
-            ""
-        ]
+        # Determine the user's language from user_states, default to English if not found
+        # This assumes the user has interacted with the bot at least once to set a language.
+        # If not, a default language (e.g., English) would be used.
+        user_lang = user_states.get(phone, {}).get('language', 'en')
+
+        # Crafting the message for illiterate users:
+        # 1. Use prominent emojis.
+        # 2. Keep text short and focused on numbers and key actions.
+        # 3. Consider sending an audio message *alongside* the text for clarity.
+
+        message_lines = []
+        audio_notification_text_parts = [] # To generate a combined audio message
+
+        # Initial message based on language
+        if user_lang == 'hi':
+            message_lines.append("🎉 *नया ऑर्डर!*")
+            audio_notification_text_parts.append("नया ऑर्डर आया है!")
+        else: # English
+            message_lines.append("🎉 *New Order!*")
+            audio_notification_text_parts.append("You have a new order!")
 
         for item in items:
-            message_lines.append(
-                f"🌽 {item['produce']}\n"
-                f"🪣 Quantity: {item['quantity_bought']}kg\n"
-                f"📦 Stock Left: {item['remaining_stock']}kg"
-            )
-            message_lines.append("")
+            produce_name = item['produce']
+            quantity_bought = item['quantity_bought']
+            remaining_stock = item['remaining_stock']
 
-        message_lines.append(f"📍 *Delivery Address:*\n{buyer_address}")
+            if user_lang == 'hi':
+                message_lines.append(
+                    f"👉 फसल: *{produce_name}*\n"
+                    f"✅ बिका: *{quantity_bought}* किलो\n"
+                    f"📦 बचा है: *{remaining_stock}* किलो"
+                )
+                audio_notification_text_parts.append(
+                    f"{produce_name} {quantity_bought} किलो बिका है, और अब {remaining_stock} किलो बचा है।"
+                )
+            else: # English
+                message_lines.append(
+                    f"👉 Crop: *{produce_name}*\n"
+                    f"✅ Sold: *{quantity_bought}* kg\n"
+                    f"📦 Left: *{remaining_stock}* kg"
+                )
+                audio_notification_text_parts.append(
+                    f"Your {produce_name} sold {quantity_bought} kilograms, and {remaining_stock} kilograms are remaining."
+                )
 
-        message = "\n".join(message_lines)
-
+        message = "\n\n".join(message_lines)
         send_whatsapp_message(phone, message)
-        return jsonify({"status": "sent"}), 200
+        
+        combined_audio_text = " ".join(audio_notification_text_parts)
+        audio_url = generate_tts_elevenlabs(combined_audio_text, user_lang)
+        if audio_url:
+            send_whatsapp_audio(phone, audio_url)
 
+
+        return jsonify({"status": "sent"}), 200
     except Exception as e:
         print(f"❌ Error in /notify-farmer: {e}")
         return jsonify({"error": str(e)}), 500
 
 
-
-
-
 if __name__ == '__main__':
     print("🚀 WhatsApp Bot Running...")
-    app = Flask(__name__, static_folder="static")
+    # Create static/audio directory if it doesn't exist
+    if not os.path.exists('static/audio'):
+        os.makedirs('static/audio')
     app.run(port=5000, debug=True)

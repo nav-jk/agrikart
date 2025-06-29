@@ -66,7 +66,6 @@ const Login = () => {
       <div className="login-container">
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-header">
-            <span className="login-icon" role="img" aria-label="wheat">🌾</span>
             <h2 className="login-title">Sign in to AgriKart.ai</h2>
           </div>
 
