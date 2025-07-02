@@ -11,3 +11,4 @@ gunicorn>=21.2.0
 psycopg2-binary>=2.9.9  # Only if using PostgreSQL
 Pillow>=10.3.0  # For image fields if needed
 python-dotenv>=1.0.1
+djangorestframework-simplejwt
