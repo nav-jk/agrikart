@@ -1,4 +1,13 @@
-Django>=5.0
-djangorestframework
-djangorestframework-simplejwt
-drf-yasg
+Django>=4.2,<5.0
+djangorestframework>=3.14.0
+drf-yasg>=1.21.5
+django-cors-headers>=4.3.0
+python-decouple>=3.8
+requests>=2.31.0
+geopy>=2.4.1
+reportlab>=4.0.6
+instamojo-wrapper>=0.2.1
+gunicorn>=21.2.0
+psycopg2-binary>=2.9.9  # Only if using PostgreSQL
+Pillow>=10.3.0  # For image fields if needed
+python-dotenv>=1.0.1
